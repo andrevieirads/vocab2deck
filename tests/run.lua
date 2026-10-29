@@ -665,6 +665,65 @@ scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro",
     check(io.open(path .. ".part", "rb") == nil, "nenhum temporário sobrando")
 end)
 
+scenario("itens Revisados com cartão já no Anki Viewer: viram No baralho e o .apkg nasce ao fechar", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:onVocab2DeckOpen()
+    p:getStore():setStatus({ "w:serendipity", "w:quixotic", "w:ephemeral" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(3%)")
+    -- o estado visto no aparelho: cartões no Anki Viewer, itens de volta a Revisado, sem pacote
+    p.app:closeAll()
+    local path = data .. "/ankiviewer/shared/Vocab2Deck.apkg"
+    os.remove(path)
+    p:getStore():setStatus({ "w:serendipity", "w:quixotic", "w:ephemeral" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():counts().deck, 3, "voltaram para ✓ No baralho")
+    check(has("Exportar (0)"), "nada para exportar de novo: " .. screenText())
+    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "sem duplicar no Anki Viewer")
+    p.app:closeAll()
+    local r = checkApkg(path)
+    eq(r.notes, "3", "pacote gravado ao fechar, mesmo sem nada novo: " .. tostring(r.raw))
+    -- lista No baralho: seleção só oferece Descartar
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^No baralho")
+    local target
+    walk(paintTop(), function(w) if w.text == "quixotic" and w.dimen then target = w return true end end)
+    tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
+    local exact = {}
+    for _, t in ipairs(texts()) do exact[t] = true end
+    check(exact["× Descartar"] and not exact["○ Inbox"] and not exact["● Revisado"], "seleção no baralho: " .. screenText())
+end)
+
+-- Rodada com cópias dos bancos de um aparelho (V2D_REPLAY=pasta com settings/ e ankiviewer/).
+local REPLAY = os.getenv("V2D_REPLAY")
+if REPLAY and REPLAY ~= "" then
+    scenario("réplica dos dados do aparelho", function()
+        local data = freshEnv()
+        os.execute("cp -R '" .. REPLAY .. "/settings/.' '" .. data .. "/settings/'")
+        os.execute("mkdir -p '" .. data .. "/ankiviewer' && cp -R '" .. REPLAY .. "/ankiviewer/.' '" .. data .. "/ankiviewer/'")
+        local p = newPlugin(fakeDict(DEFS), fakeAV())
+        local saved = dofile(data .. "/settings/vocab2deck.lua")
+        for k, v in pairs(saved) do p.settings:set(k, v) end
+        local before = p:getStore():counts()
+        print("    antes:", before.inbox, "inbox", before.ready, "revisados", before.deck, "no baralho")
+        p:onVocab2DeckOpen()
+        local after = p:getStore():counts()
+        print("    depois:", after.inbox, "inbox", after.ready, "revisados", after.deck, "no baralho")
+        print("    " .. screenText())
+        p.app:closeAll()
+        local path = data .. "/ankiviewer/shared/Vocab2Deck.apkg"
+        local r, notes = checkApkg(path)
+        check(r.notes and tonumber(r.notes) > 0, "pacote gravado com os cartões do aparelho: " .. tostring(r.raw))
+        print("    pacote: notas=" .. tostring(r.notes) .. " baralhos=" .. tostring(r.decks) .. " revlog=" .. tostring(r.revlog_query))
+        for i = 1, math.min(3, #notes) do print("    nota: " .. notes[i]:sub(1, 150)) end
+    end)
+end
+
 scenario("lista: seleção em massa e busca", function()
     local data = freshEnv()
     makeVocab(data, WORDS)

@@ -149,6 +149,13 @@ end
 function Items:bottom(w)
     if self.selecting then
         local any = self:selectedCount() > 0
+        if (self.filter.statuses or {}).deck then
+            -- já no Anki Viewer: voltar ao Inbox/Revisado não tiraria o cartão de lá
+            return Kit.bottomBar(w, {
+                { text = _("✕"), weight = 0.5, callback = function() self:endSelection() end },
+                { text = _("× Descartar"), enabled = any, callback = function() self:bulkStatus("discarded") end },
+            }, { size = Kit.SIZE.small })
+        end
         return Kit.bottomBar(w, {
             { text = _("✕"), weight = 0.5, callback = function() self:endSelection() end },
             { text = _("× Descartar"), enabled = any, callback = function() self:bulkStatus("discarded") end },

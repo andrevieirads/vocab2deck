@@ -181,10 +181,17 @@ function Vocab2Deck:getApp()
     return self.app
 end
 
--- Ao fechar o plugin: se algo mudou no Anki Viewer desde o último pacote, regrava o .apkg.
+function Vocab2Deck:apkgPath()
+    return DataStorage:getDataDir() .. "/ankiviewer/shared/" .. Apkg.FILE
+end
+
+-- Ao fechar o plugin: grava o .apkg se algo mudou no Anki Viewer desde o último
+-- pacote ou se o arquivo ainda não existe (ex.: tudo já estava exportado).
 function Vocab2Deck:onAppClosed(app)
     if self.app == app then self.app = nil end
-    if self._apkg_dirty then
+    local f = io.open(self:apkgPath(), "rb")
+    if f then f:close() end
+    if self._apkg_dirty or not f then
         self._apkg_dirty = false
         self:writeApkg()
     end
@@ -219,6 +226,7 @@ function Vocab2Deck:syncVocab()
         skip = function(w) return VocabReader.isLearned(w, opts.learned_streak) end
     end
     local res = self:getStore():syncFromVocab(vb.words, { exported = exported, definitions = definitions, skip = skip })
+    self:normalizeStatuses(state)
     if #vb.words == 0 then
         res.error = _("O Vocabulary Builder está vazio. Consulte palavras no dicionário durante a leitura para que elas cheguem aqui.")
     elseif opts.only_unlearned and not vb.has_streak then
@@ -227,6 +235,30 @@ function Vocab2Deck:syncVocab()
     if state.status == "old_schema" or state.status == "bad_schema" then res.error = UI.deckError(state.status) end
     self.last_sync = res
     return res
+end
+
+--[[--
+Item com cartão no Anki Viewer está no baralho, seja qual for o status
+guardado (ex.: voltou ao Inbox e foi revisado de novo). Sem isso a
+exportação não cria nada (o cartão já existe) e o item ficaria ● Revisado
+para sempre. Descartados ficam como estão.
+@treturn number quantos foram corrigidos
+--]]
+function Vocab2Deck:normalizeStatuses(state)
+    state = state or self:deckState()
+    local live = {}
+    for key, c in pairs(state.cards or {}) do
+        if c.card_id then live[key:match("^(.*)|[fr]$")] = true end
+    end
+    local fix = {}
+    for __, r in ipairs(self:getStore():query({ statuses = { inbox = true, ready = true } })) do
+        if live[r.vkey] then fix[#fix + 1] = r.vkey end
+    end
+    if #fix > 0 then
+        self:getStore():setStatus(fix, "deck")
+        Safe.log("itens com cartão no Anki Viewer marcados como No baralho:", #fix)
+    end
+    return #fix
 end
 
 -- Busca a definição de um item que ainda não foi buscado (uma vez por item).
@@ -414,7 +446,8 @@ function Vocab2Deck:writeApkg()
         local opts = self:planOptions({ front_on_back = false })
         local model = self:model()
         local notes = {}
-        for __, item in ipairs(self:getStore():all({ statuses = { deck = true } })) do
+        -- todo cartão do plugin que existe no Anki Viewer (menos de itens descartados)
+        for __, item in ipairs(self:getStore():all({ statuses = { inbox = true, ready = true, deck = true } })) do
             local rendered = Sync.renderItem(item, model, opts)
             for __, side in ipairs({ "f", "r" }) do
                 local c = state.cards[item.vkey .. "|" .. side]
@@ -424,10 +457,13 @@ function Vocab2Deck:writeApkg()
                 end
             end
         end
-        if #notes == 0 then return nil end
+        if #notes == 0 then
+            Safe.log("pacote .apkg não gravado: nenhum cartão no baralho")
+            return nil
+        end
         local dir = DataStorage:getDataDir() .. "/ankiviewer/shared"
         require("util").makePath(dir)
-        local dest = dir .. "/" .. Apkg.FILE
+        local dest = self:apkgPath()
         local wok, werr = Apkg.write{
             path = dest, notes = notes, sqlite = require("lua-ljsqlite3/init"), json = self:jsonCodec(),
             sha1 = sha1(), tmpdir = DataStorage:getSettingsDir(),
@@ -463,7 +499,9 @@ function Vocab2Deck:_export(Trapper, run_opts)
     local store = self:getStore()
     local model = self:model()
     local opts = self:planOptions({ include_inbox = run_opts.include_inbox })
-    local plan = Sync.plan(store:all(), self:deckState(), model, opts)
+    local state = self:deckState()
+    self:normalizeStatuses(state)
+    local plan = Sync.plan(store:all(), state, model, opts)
     local summary = {
         added = 0, items = 0, updated = 0, skipped_nodef = 0, lookup_errors = 0, aborted = false, remaining = 0,
         edited_kept = 0, changes_pending = {},

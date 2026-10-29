@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.2
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.2.1
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -138,7 +138,8 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - Linhas paginadas com a palavra, o livro, a definição curta e o símbolo do status.
 - Ordem *Mais novas* / *A–Z*, e busca.
 - **Toque longo** entra no modo de seleção: *Selecionar todas*, e depois × Descartar,
-  ○ Inbox ou ● Revisado em massa.
+  ○ Inbox ou ● Revisado em massa. Na lista ✓ No baralho só existe × Descartar, porque voltar
+  ao Inbox não tiraria o cartão do Anki Viewer.
 - Tocar numa linha abre a palavra.
 
 **Revisar** (uma palavra por tela):
@@ -200,8 +201,10 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 **Pacote para o Anki** (passo da exportação, sem tela própria):
 - A cada exportação, o plugin grava `koreader/ankiviewer/shared/Vocab2Deck.apkg` com **todos**
   os cartões que estão no baralho.
-- Também regrava o pacote ao fechar o plugin, se algum cartão no baralho mudou (edição,
-  atualização automática).
+- Também grava o pacote ao fechar o plugin, se algum cartão no baralho mudou (edição,
+  atualização automática) **ou se o arquivo ainda não existe**. Assim ele aparece mesmo
+  quando tudo já estava exportado e o botão mostra *Exportar (0)*.
+- Entram todos os cartões do plugin que existem no Anki Viewer, menos os de itens descartados.
 - Estrutura no Anki:
 
   ```
@@ -270,6 +273,7 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 | Cartão apagado no Anki Viewer | Não volta, a não ser por *Recriar cartões apagados* |
 | Baralho apagado no Anki Viewer | O controle é limpo; os itens são recriados na próxima exportação |
 | × Descartado depois de exportado | O cartão continua no Anki Viewer; apague lá se quiser |
+| Item ○ Inbox ou ● Revisado que já tem cartão no Anki Viewer | Volta sozinho para ✓ No baralho, ao abrir o plugin e ao exportar; nada é duplicado |
 | Nada é apagado | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
 
 **Migração da versão 1:**
@@ -371,7 +375,9 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os baralhos, os campos e os arrays JSON;
   - o checksum das notas;
   - os GUIDs estáveis entre duas exportações.
-- Resultado atual: 164 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
+  (`settings/` e `ankiviewer/`).
+- Resultado atual: 169 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 
