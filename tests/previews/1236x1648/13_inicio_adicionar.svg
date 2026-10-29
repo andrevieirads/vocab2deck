@@ -144,7 +144,8 @@
 <text x="823" y="925" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Exportar (0)</text>
 <text x="30" y="1052" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">BARALHOS</text>
 <rect x="30" y="1076" width="1176" height="3" fill="#000000"/>
-<text x="30" y="1119" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">Nenhum baralho ainda. Exporte os Revisados ou toque em Importar.</text>
+<text x="30" y="1119" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">Nenhum baralho ainda. Exporte os Revisados, toque em Importar ou em</text>
+<text x="30" y="1155" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">Adicionar ▸ Adicionar baralho.</text>
 <rect x="0" y="1501" width="1236" height="4" fill="#000000"/>
 <rect x="153" y="1532" width="4" height="4" fill="#000000"/>
 <rect x="153" y="1533" width="4" height="4" fill="#000000"/>

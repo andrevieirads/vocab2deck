@@ -7,8 +7,9 @@ Início: o que estudar hoje, por onde as palavras passam e os baralhos.
   ✓ No baralho | × Descartados (Vocabulário abre o Vocabulary Builder do
   KOReader; os outros abrem a lista); avisos; Revisar (N) /
   Exportar (N) quando há o que fazer; "Atualizar N cartões alterados…".
-* BARALHOS: todos os do Anki Viewer embutido (tocar estuda; toque longo: opções).
-* Barra de baixo: Adicionar · Buscar · Sincronizar (Vocabulary Builder +
+* BARALHOS: todos os do Anki Viewer embutido, em árvore (sub-baralhos com
+  recuo; tocar estuda; toque longo: sub-baralho, renomear, mover, apagar…).
+* Barra de baixo: Adicionar (cartão ou baralho) · Buscar · Sincronizar (Vocabulary Builder +
   destaques -> Inbox; No baralho -> Anki Viewer) · Importar.
 Em paisagem, os baralhos vão para uma coluna à direita.
 O kit e o padrão das telas são os do KR2Anki (kr2anki/screens/home.lua).
@@ -19,6 +20,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local BaseScreen = require("vocab2deck/ui/screen")
+local Decks = require("vocab2deck/decks")
 local Kit = require("vocab2deck/ui/kit")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -36,6 +38,7 @@ function Home:loadData()
     self.sources = self.host:getStore():sourceCounts()
     self.pending = self.host:pendingChanges()
     self.decks = self.host:allDecks()
+    self.tree = Decks.tree(self.decks)
 end
 
 function Home:onDataChanged()
@@ -257,25 +260,35 @@ function Home:actionsSection(cw)
     return g
 end
 
--- Uma linha da lista de baralhos: nome, "N cartões · em dia", bolinha com os para estudar, ›.
+--[[--
+Uma linha da lista de baralhos: nome (sub-baralho com recuo), "N cartões ·
+em dia", bolinha com os para estudar, ›. Os números incluem os sub-baralhos.
+--]]
 function Home:deckRow(d, width)
     local h = Kit.dp(70)
+    local due, n = d.total_due or d.due or 0, d.total_cards or d.cards or 0
     local right = HorizontalGroup:new{ align = "center" }
-    if (d.due or 0) > 0 then
-        table.insert(right, Kit.badge(d.due))
+    if due > 0 then
+        table.insert(right, Kit.badge(due))
         table.insert(right, Kit.hspan(Kit.dp(12)))
     end
     table.insert(right, Kit.icon("chevron_right", Kit.dp(16)))
-    local cards = T(plural(d.cards, _("%1 cartão"), _("%1 cartões")), d.cards)
-    local sub = (d.due or 0) > 0 and cards or T(_("%1 · em dia"), cards)
-    local label_w = width - right:getSize().w - Kit.dp(16)
+    local cards = T(plural(n, _("%1 cartão"), _("%1 cartões")), n)
+    local sub = due > 0 and cards or T(_("%1 · em dia"), cards)
+    if (d.children or 0) > 0 then
+        sub = T(plural(d.children, _("%1 · %2 sub-baralho"), _("%1 · %2 sub-baralhos")), sub, d.children)
+    end
+    local indent = math.min(d.depth or 0, 4) * Kit.dp(22)
+    local label_w = width - indent - right:getSize().w - Kit.dp(16)
     local left = VerticalGroup:new{
         align = "left",
-        Kit.text(d.name, Kit.serif(Kit.SIZE.body + 1), { max_width = label_w }),
+        Kit.text(d.label or d.name, Kit.serif(Kit.SIZE.body + 1), { max_width = label_w }),
         Kit.text(sub, Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK, max_width = label_w }),
     }
+    if indent > 0 then left = HorizontalGroup:new{ align = "center", Kit.hspan(indent), left } end
+    local tree = self.tree
     return Kit.tap(Kit.spread(width, h, left, right),
-        function() self.host:studyDeck(d.id) end,
+        function() require("vocab2deck/ui").studyFromTree(self.host, tree, d) end,
         function() self.host:deckOptions(d) end)
 end
 
@@ -284,7 +297,7 @@ BARALHOS. Mostra quantos couberem em `room`; se não couberem todos, a última
 linha abre a lista inteira.
 --]]
 function Home:decksSection(width, room)
-    local decks = self.decks or {}
+    local decks = self.tree or {}
     local head = VerticalGroup:new{
         align = "left",
         Kit.sectionLabel(_("Baralhos"), width),
@@ -293,7 +306,7 @@ function Home:decksSection(width, room)
     if #decks == 0 then
         return VerticalGroup:new{
             align = "left", head, Kit.vspan(Kit.dp(8)),
-            Kit.textbox(_("Nenhum baralho ainda. Exporte os Revisados ou toque em Importar."),
+            Kit.textbox(_("Nenhum baralho ainda. Exporte os Revisados, toque em Importar ou em Adicionar ▸ Adicionar baralho."),
                 Kit.serifItalic(Kit.SIZE.small), width, { fgcolor = Kit.GREY_DARK, max_lines = 2 }),
         }
     end
@@ -311,6 +324,24 @@ function Home:decksSection(width, room)
         rows[#rows + 1] = Kit.tap(more, function() require("vocab2deck/ui").showDecks(self.host, decks) end)
     end
     return VerticalGroup:new{ align = "left", head, Kit.rows(width, rows) }
+end
+
+-- ＋ Adicionar: um cartão novo (Frente/Verso) ou um baralho novo.
+function Home:showAdd()
+    local dialog
+    local function item(text, fn)
+        return { { text = text, callback = function() UIManager:close(dialog); fn() end } }
+    end
+    dialog = ButtonDialog:new{
+        title = _("Adicionar"),
+        title_align = "center",
+        buttons = {
+            item(_("＋ Adicionar cartão"), function() require("vocab2deck/capture").manual(self.host) end),
+            item(_("＋ Adicionar baralho"), function() require("vocab2deck/ui").newDeck(self.host) end),
+            { { text = _("Fechar"), callback = function() UIManager:close(dialog) end } },
+        },
+    }
+    UIManager:show(dialog)
 end
 
 -- Barra de baixo: Adicionar · Buscar · Sincronizar (N) · Importar, ícone e nome.
@@ -339,7 +370,7 @@ function Home:bottomBar(w)
         Kit.hline(w, Kit.dp(2)),
         HorizontalGroup:new{
             align = "center",
-            item("plus", _("Adicionar"), function() require("vocab2deck/capture").manual(self.host) end),
+            item("plus", _("Adicionar"), function() self:showAdd() end),
             item("search", _("Buscar"), function() self.host:askSearch(self.app) end),
             item("sync", _("Sincronizar"), function() self.host:syncAll() end, { badge = self.counts.deck }),
             item("import", _("Importar"), function() self.host:importApkg() end),

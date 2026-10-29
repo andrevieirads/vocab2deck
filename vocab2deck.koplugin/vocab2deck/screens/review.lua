@@ -8,6 +8,8 @@ Mesmo fluxo de kr2anki/screens/review.lua (KR2Anki):
 * frase de contexto (toque: encurtar, mais contexto, original, editar)
 * "Escolha o sentido": os sentidos do dicionário em botões de rádio
 * "Campos do cartão": abre o editor (como o "Adicionar" do Anki)
+Na tela de um item só: "Baralho: …" mostra em qual baralho o cartão está
+(ou para qual vai) e, ao tocar, troca o baralho.
 Navegação: página seguinte / deslizar para a esquerda = Pular; página
 anterior / deslizar para a direita = item anterior, com a decisão ainda
 editável.
@@ -264,7 +266,27 @@ function Review:wordBlock(cw)
     if it.dict then
         table.insert(g, Kit.text(it.dict, Kit.ui(Kit.SIZE.small), { fgcolor = Kit.GREY_DARK, max_width = cw }))
     end
+    if self.single and it.status ~= "discarded" then
+        table.insert(g, Kit.vspan(Kit.dp(6)))
+        table.insert(g, self:deckLine(cw))
+    end
     return g
+end
+
+-- "Baralho: Nome ›" (no baralho) ou "Vai para o baralho: Nome ›"; tocar troca.
+function Review:deckLine(cw)
+    local it = self.item
+    local current = it.status == "deck" and self.host:itemDecks()[it.vkey] or nil
+    local text
+    if current then
+        text = T(_("Baralho: %1  ›"), current)
+    else
+        current = self.host:targetDeck(it)
+        text = T(_("Vai para o baralho: %1  ›"), current)
+    end
+    return Kit.tap(Kit.text(text, Kit.uiBold(Kit.SIZE.small), { max_width = cw }), function()
+        require("vocab2deck/ui").changeItemsDeck(self.host, { it.vkey }, current, function() self:reload() end)
+    end)
 end
 
 function Review:sentenceBlock(cw, max_lines)

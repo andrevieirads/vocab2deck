@@ -40,9 +40,11 @@ function B.contextSentence(row, opts)
     return r
 end
 
--- Nome do baralho de destino: com "um baralho por livro", o título do livro;
--- senão (ou sem livro), o baralho das configurações.
-function B.deckName(opts, book)
+-- Nome do baralho de destino: o escolhido para o cartão (Trocar baralho);
+-- senão, com "um baralho por livro", o título do livro; senão (ou sem livro),
+-- o baralho das configurações.
+function B.deckName(opts, book, chosen)
+    if chosen and U.trim(chosen) ~= "" then return chosen end
     local base = opts.deck_name or "Vocabulary Builder"
     if opts.subdeck_per_book and book and U.trim(book) ~= "" then
         -- "::" no título viraria hierarquia num Anki de verdade; troca por ":"

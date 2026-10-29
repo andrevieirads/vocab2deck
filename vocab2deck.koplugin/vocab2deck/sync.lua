@@ -38,7 +38,7 @@ end
   new      = { { item, sides = {…}, needs_lookup } }
   changed  = { { item, side, card_id, front, back, edited } }
   moves    = { { vkey, side, card_id, deck_name } } cartões fora do baralho que as
-             configurações pedem (ex.: ligou "um baralho por livro")
+             configurações ou o baralho escolhido para o item pedem
   deleted, unchanged, edited_changed
 --]]
 function Sync.plan(items, state, model, opts)
@@ -58,7 +58,7 @@ function Sync.plan(items, state, model, opts)
                 if not c.card_id then
                     plan.deleted = plan.deleted + 1
                 else
-                    local want_deck = B.deckName(opts, item.book)
+                    local want_deck = B.deckName(opts, item.book, item.deck)
                     if item.status ~= "discarded" and decks[c.deck_id] and decks[c.deck_id] ~= want_deck then
                         plan.moves[#plan.moves + 1] = { vkey = item.vkey, side = side, card_id = c.card_id, deck_name = want_deck }
                     end
@@ -99,7 +99,7 @@ function Sync.insertOps(entries, model, opts)
             -- sem definição e configurado para pular: fica onde está, tenta de novo na próxima vez
             stats.skipped_nodef = stats.skipped_nodef + 1
         else
-            local deck = B.deckName(opts, e.item.book)
+            local deck = B.deckName(opts, e.item.book, e.item.deck)
             for _, side in ipairs(e.sides) do
                 local t = rendered[side]
                 ops.inserts[#ops.inserts + 1] = {

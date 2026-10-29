@@ -119,6 +119,11 @@ function Export:resultBody(cw)
         table.insert(g, Kit.textbox(T(_("Backup: %1"), r.backup:match("[^/]+$") or r.backup), Kit.ui(Kit.SIZE.tiny), cw,
             { fgcolor = Kit.GREY_DARK }))
     end
+    if r.apkg then
+        table.insert(g, Kit.vspan(Kit.dp(4)))
+        table.insert(g, Kit.textbox(T(_("Pacote para o Anki: %1"), r.apkg), Kit.ui(Kit.SIZE.tiny), cw,
+            { fgcolor = Kit.GREY_DARK, max_lines = 2 }))
+    end
     if r.apkg_error then
         table.insert(g, Kit.vspan(Kit.dp(8)))
         table.insert(g, Kit.textbox(T(_("O pacote Vocab2Deck.apkg não foi gravado: %1"), r.apkg_error),

@@ -8,6 +8,8 @@
 <text x="30" y="349" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
 <text x="94" y="346" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Palavras que foram para o baralho</text>
 <text x="1599" y="346" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">2</text>
+<text x="30" y="406" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Pacote para o Anki:</text>
+<text x="30" y="437" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">/var/folders/cj/lvhfs9ns5jn9k3y2cqxhc_800000gn/T/tmp.lQwQXbHmZS/1648x1236/env3/ankiviewer/shared/Vocab2Deck.apkg</text>
 <rect x="0" y="1075" width="1648" height="4" fill="#000000"/>
 <rect x="30" y="1102" width="786" height="111" rx="11" fill="#ffffff"/>
 <rect x="31.5" y="1103.5" width="783.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>

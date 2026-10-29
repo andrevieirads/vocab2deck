@@ -1,7 +1,8 @@
 --[[--
 Lista de palavras: linhas paginadas (palavra, definição curta, símbolo do
 status), ordem Mais novas / A–Z, busca, e modo de seleção (toque longo) com
-ações em massa. Adaptado de kr2anki/screens/items.lua (KR2Anki), sem o filtro
+ações em massa. Nos ✓ No baralho, cada linha mostra o baralho do cartão, e
+a seleção ganha "Baralho…" (mover para outro baralho). Adaptado de kr2anki/screens/items.lua (KR2Anki), sem o filtro
 por idioma/data.
 --]]
 
@@ -54,8 +55,10 @@ function Items:rowWidget(r, width)
     local word_w = math.floor((width - check_w - sym_w) * 0.42)
     local mean_w = width - check_w - sym_w - word_w - Kit.dp(8)
     local word = VerticalGroup:new{ align = "left", Kit.text(r.word or "", Kit.uiBold(Kit.SIZE.body), { max_width = word_w }) }
-    if r.book then
-        table.insert(word, Kit.text(r.book, Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK, max_width = word_w }))
+    -- no baralho: em qual baralho está; nos outros: o livro
+    local sub = r.status == "deck" and r.deck_name and T(_("Baralho: %1"), r.deck_name) or r.book
+    if sub then
+        table.insert(word, Kit.text(sub, Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK, max_width = word_w }))
     end
     -- o verso do cartão: a definição, ou o campo que você escreveu (ex.: Notas)
     local meaning = r.back_preview
@@ -135,6 +138,13 @@ function Items:bulkStatus(status)
     self:endSelection()
 end
 
+-- Baralho… (só nos ✓ No baralho): move os cartões selecionados para outro baralho.
+function Items:bulkDeck()
+    local keys = self:selectedKeys()
+    if #keys == 0 then return end
+    require("vocab2deck/ui").changeItemsDeck(self.host, keys, nil, function() self:endSelection() end)
+end
+
 -- Limpar (só nos Descartados): tira as palavras do plugin, sem voltar do Vocabulary Builder.
 function Items:bulkClear()
     local keys = self:selectedKeys()
@@ -150,6 +160,12 @@ function Items:bulkClear()
             self:endSelection()
         end,
     })
+end
+
+-- Lista só de ✓ No baralho.
+function Items:deckOnly()
+    local st = self.filter.statuses or {}
+    return st.deck and not (st.inbox or st.ready or st.discarded) or false
 end
 
 -- Montagem -------------------------------------------------------------------------------
@@ -172,6 +188,15 @@ function Items:bottom(w)
     if self.selecting then
         local any = self:selectedCount() > 0
         local in_discarded = (self.filter.statuses or {}).discarded
+        if self:deckOnly() then
+            return Kit.bottomBar(w, {
+                { text = _("✕"), weight = 0.5, callback = function() self:endSelection() end },
+                { text = _("× Descartar"), enabled = any, callback = function() self:bulkStatus("discarded") end },
+                { text = _("○ Inbox"), enabled = any, callback = function() self:bulkStatus("inbox") end },
+                { text = _("● Revisado"), enabled = any, callback = function() self:bulkStatus("ready") end },
+                { text = _("Baralho…"), weight = 1.2, primary = true, enabled = any, callback = function() self:bulkDeck() end },
+            }, { size = Kit.SIZE.small })
+        end
         return Kit.bottomBar(w, {
             { text = _("✕"), weight = 0.5, callback = function() self:endSelection() end },
             in_discarded
@@ -236,9 +261,14 @@ function Items:build(w, h)
     local list = VerticalGroup:new{ align = "left" }
     local store = self.host:getStore()
     local model, opts = self.host:modelResolver(), self.host.settings:cardOptions()
-    for __, r in ipairs(store:query(self.filter, self.sort, (self.page - 1) * per_page, per_page)) do
+    local page = store:query(self.filter, self.sort, (self.page - 1) * per_page, per_page)
+    local in_deck
+    for __, r in ipairs(page) do if r.status == "deck" then in_deck = true end end
+    local decks = in_deck and self.host:itemDecks() or {}
+    for __, r in ipairs(page) do
         local item = store:get(r.vkey)
         r.back_preview = item and Tpl.backPreview(Tpl.fields(item, model(item), opts)) or nil
+        r.deck_name = decks[r.vkey]
         table.insert(list, self:rowWidget(r, cw))
         table.insert(list, Kit.hline(cw, Kit.dp(1), Kit.GREY_LIGHT))
     end

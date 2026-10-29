@@ -15,11 +15,15 @@ livro, ver highlight_reader), "book" (botão "＋ Adicionar ao baralho" no livro
 ou "manual" (botão "＋ Adicionar cartão" no Início).
 in_vocab / in_highlights: o texto está hoje no Vocabulary Builder / nos
 destaques (as duas primeiras caixas do Início).
+deck: baralho escolhido para o cartão (Trocar baralho); nil = o das
+configurações (ou o do livro, com "um baralho por livro").
 
 Mesmo desenho do kr2anki/db.lua: cada operação abre uma conexão curta, e toda
 escrita é uma transação. O Vocabulary Builder nunca é escrito; o banco do
 Anki Viewer é escrito só pelo deck_writer.
 --]]
+
+local Decks = require("vocab2deck/decks")
 
 local Store = {}
 Store.__index = Store
@@ -76,6 +80,7 @@ local SCHEMA = {
 local COLUMN_MIGRATIONS = {
     { "items", "origin", "TEXT NOT NULL DEFAULT 'vocab'" },
     { "items", "in_highlights", "INTEGER NOT NULL DEFAULT 0" },
+    { "items", "deck", "TEXT" },
 }
 
 local unpack = table.unpack or unpack -- luacheck: ignore
@@ -168,7 +173,7 @@ local function exec(conn, sql, ...)
 end
 
 local ITEM_COLS = { "vkey", "word", "book", "prev", "next", "highlight", "created", "streak", "status",
-                    "looked_up", "definition", "dict", "in_vocab", "added_at", "updated_at", "origin" }
+                    "looked_up", "definition", "dict", "in_vocab", "added_at", "updated_at", "origin", "deck" }
 local ITEM_SELECT = "SELECT " .. table.concat(ITEM_COLS, ", ") .. " FROM items"
 
 -- Vocabulary Builder -> itens -----------------------------------------------------------
@@ -395,13 +400,13 @@ end
 -- editado), que vale no lugar da do dicionário.
 function Store:query(filter, sort, offset, limit)
     local w, args = where(filter)
-    local sql = "SELECT vkey, word, book, status, definition, looked_up, "
+    local sql = "SELECT vkey, word, book, status, definition, looked_up, deck, "
         .. "(SELECT value FROM item_fields f WHERE f.vkey = items.vkey AND f.extra = 0 AND f.field = 'definition') "
         .. "FROM items WHERE " .. w
         .. " ORDER BY " .. (ORDER[sort or "newest"] or ORDER.newest)
     if limit then sql = sql .. " LIMIT " .. math.floor(limit) .. " OFFSET " .. math.floor(offset or 0) end
     return self:_read(function(conn)
-        return rows(conn, { "vkey", "word", "book", "status", "definition", "looked_up", "my_def" }, sql, unpack(args))
+        return rows(conn, { "vkey", "word", "book", "status", "definition", "looked_up", "deck", "my_def" }, sql, unpack(args))
     end)
 end
 
@@ -459,6 +464,32 @@ function Store:setStatus(vkeys, status)
             exec(conn, "UPDATE items SET status = ?, updated_at = ? WHERE vkey = ?", status, now, k)
         end
     end)
+end
+
+-- Baralho escolhido para os cartões (nil = volta ao das configurações).
+function Store:setDeck(vkeys, deck)
+    if deck == "" then deck = nil end
+    local now = self.now()
+    self:_tx(function(conn)
+        for _, k in ipairs(vkeys) do
+            exec(conn, "UPDATE items SET deck = ?, updated_at = ? WHERE vkey = ?", deck, now, k)
+        end
+    end)
+end
+
+-- Baralho renomeado/movido: os itens que o escolheram (ou um de dentro dele) seguem o nome novo.
+function Store:renameDeck(old, new)
+    local n = 0
+    self:_tx(function(conn)
+        for _, r in ipairs(rows(conn, { "vkey", "deck" }, "SELECT vkey, deck FROM items WHERE deck IS NOT NULL")) do
+            local name = Decks.renamed(r.deck, old, new)
+            if name then
+                exec(conn, "UPDATE items SET deck = ? WHERE vkey = ?", name, r.vkey)
+                n = n + 1
+            end
+        end
+    end)
+    return n
 end
 
 --[[--

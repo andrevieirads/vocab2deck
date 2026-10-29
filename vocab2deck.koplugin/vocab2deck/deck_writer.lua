@@ -31,6 +31,8 @@ Segurança
   escrever e pede para abrir o Anki Viewer antes.
 --]]
 
+local Decks = require("vocab2deck/decks")
+
 local W = {}
 W.__index = W
 
@@ -387,14 +389,21 @@ function W:loadState()
     return state
 end
 
-local function deckId(conn, name, cache)
-    if cache[name] then return cache[name] end
+local function findDeck(conn, name)
     local stmt = conn:prepare("SELECT id FROM decks WHERE name = ?;")
     stmt:bind(name)
     local row = stmt:step()
     stmt:close()
-    local id = row and num(row[1])
+    return row and num(row[1]) or nil
+end
+
+-- Id do baralho, criando-o (e os de cima dele, "A" para "A::B") se faltar.
+local function deckId(conn, name, cache)
+    if cache[name] then return cache[name] end
+    local id = findDeck(conn, name)
     if not id then
+        local parent = Decks.parent(name)
+        if parent then deckId(conn, parent, cache) end
         exec(conn, "INSERT INTO decks (name) VALUES (?);", name)
         id = num(conn:rowexec("SELECT last_insert_rowid();"))
     end
@@ -410,7 +419,10 @@ Grava as operações numa única transação (depois do backup).
   inserts = { {vkey, side, deck_name, source_key, front, back} }  cartões novos
   updates = { {vkey, side, card_id, front, back} }         texto novo (progresso mantido)
   moves   = { {vkey, side, card_id, deck_name} }           troca de baralho (progresso mantido;
-                                                           baralho que ficar vazio é apagado)
+                                                           baralho que ficar vazio é apagado,
+                                                           menos com keep_empty)
+  keep_empty = true: a troca foi pedida por você (Trocar baralho); o baralho
+               de onde o cartão saiu fica, mesmo vazio
 }
 @param opts { backup_done = true quando já houve backup nesta sessão }
 @treturn table { added, adopted, updated, moved, backup }
@@ -477,14 +489,78 @@ function W:apply(ops, opts)
             end
             -- baralho que ficou vazio é apagado, a não ser que o controle de um cartão
             -- apagado no Anki Viewer ainda aponte para ele (o cascade o levaria junto
-            -- e o cartão voltaria na próxima exportação)
-            for old in pairs(emptied) do
+            -- e o cartão voltaria na próxima exportação) ou que tenha sub-baralhos
+            for old in pairs(ops.keep_empty and {} or emptied) do
                 exec(conn, "DELETE FROM decks WHERE id = ? AND NOT EXISTS (SELECT 1 FROM cards WHERE deck_id = ?) "
-                    .. "AND NOT EXISTS (SELECT 1 FROM vocab2deck_cards WHERE deck_id = ?);", old, old, old)
+                    .. "AND NOT EXISTS (SELECT 1 FROM vocab2deck_cards WHERE deck_id = ?) "
+                    .. "AND NOT EXISTS (SELECT 1 FROM decks s WHERE substr(s.name, 1, length(decks.name) + 2) = decks.name || '::');",
+                    old, old, old)
             end
         end)
     end)
     return result
+end
+
+--[[--
+Cria um baralho vazio (e os de cima dele, para "A::B").
+@treturn number id, boolean true se já existia
+--]]
+function W:createDeck(name)
+    name = Decks.normalize(name)
+    if not name then error("O nome do baralho não pode ficar vazio.", 0) end
+    self:prepareWrite()
+    return self:_with(function(conn)
+        return transaction(conn, function()
+            local existing = findDeck(conn, name)
+            if existing then return existing, true end
+            return deckId(conn, name, {}), false
+        end)
+    end)
+end
+
+--[[--
+Renomeia um baralho; os sub-baralhos dele ("old::…") vão junto. Mover um
+baralho para dentro de outro é o mesmo: "Verbos" -> "Inglês::Verbos".
+Só o nome muda: os ids, os cartões e o progresso ficam.
+O baralho old pode nem existir como linha (só os de dentro dele).
+@treturn table { {id, old, new} } os baralhos renomeados
+--]]
+function W:renameDeck(old, new)
+    new = Decks.normalize(new)
+    if not new then error("O nome do baralho não pode ficar vazio.", 0) end
+    if new == old then return {} end
+    if Decks.isWithin(new, old) then error("Um baralho não pode ir para dentro dele mesmo.", 0) end
+    self:prepareWrite()
+    return self:_with(function(conn)
+        return transaction(conn, function()
+            local list, renaming = {}, {}
+            for _, r in ipairs(rowsN(conn, 2, "SELECT id, name FROM decks;")) do
+                local to = Decks.renamed(r[2], old, new)
+                if to then
+                    list[#list + 1] = { id = num(r[1]), old = r[2], new = to }
+                    renaming[r[2]] = true
+                end
+            end
+            if #list == 0 then error("O baralho \"" .. old .. "\" não existe mais.", 0) end
+            for _, d in ipairs(list) do
+                local other = findDeck(conn, d.new)
+                if other and not renaming[d.new] then
+                    error("Já existe um baralho chamado \"" .. d.new .. "\".", 0)
+                end
+            end
+            -- nomes temporários primeiro: a troca nunca esbarra no UNIQUE do nome
+            for _, d in ipairs(list) do
+                exec(conn, "UPDATE decks SET name = ? WHERE id = ?;", "~vocab2deck-rename-" .. d.id, d.id)
+            end
+            for _, d in ipairs(list) do
+                exec(conn, "UPDATE decks SET name = ? WHERE id = ?;", d.new, d.id)
+            end
+            -- os de cima do nome novo também existem (Inglês para Inglês::Verbos)
+            local parent = Decks.parent(new)
+            if parent then deckId(conn, parent, {}) end
+            return list
+        end)
+    end)
 end
 
 --[[--

@@ -8,6 +8,8 @@
 <text x="30" y="349" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
 <text x="94" y="346" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Palavras que foram para o baralho</text>
 <text x="1187" y="346" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">2</text>
+<text x="30" y="406" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Pacote para o Anki:</text>
+<text x="30" y="437" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">/var/folders/cj/lvhfs9ns5jn9k3y2cqxhc_800000gn/T/tmp.lQwQXbHmZS/1236x1648/env3/ankiviewer/…</text>
 <rect x="0" y="1487" width="1236" height="4" fill="#000000"/>
 <rect x="30" y="1514" width="580" height="111" rx="11" fill="#ffffff"/>
 <rect x="31.5" y="1515.5" width="577.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
