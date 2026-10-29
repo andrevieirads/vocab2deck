@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.3
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.4
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -147,6 +147,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - Ordem *Mais novas* / *A–Z*, e busca.
 - **Toque longo** entra no modo de seleção: *Selecionar todas*, e depois × Descartar,
   ○ Inbox ou ● Revisado em massa, inclusive na lista ✓ No baralho.
+  - Na lista × Descartados, no lugar de × Descartar fica **Limpar**: depois de confirmar, as
+    palavras saem do plugin.
+  - O plugin registra as palavras limpas, e a leitura do Vocabulary Builder não as traz de
+    volta. Para trazer uma de volta, adicione-a de novo pelo livro com *＋ Adicionar ao
+    baralho*.
+  - Limpar não apaga cartões no Anki Viewer.
   - O cartão continua no Anki Viewer, com o progresso.
   - Ao exportar de novo um ● Revisado que já tem cartão, o cartão recebe o texto atual e o
     item volta a ✓ No baralho, sem duplicar.
@@ -290,7 +296,8 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 | Baralho apagado no Anki Viewer | O controle é limpo; os itens são recriados na próxima exportação |
 | × Descartado depois de exportado | O cartão continua no Anki Viewer; apague lá se quiser |
 | Item mandado de ✓ No baralho para ○ Inbox ou ● Revisado | O status fica como você escolheu; o cartão continua no Anki Viewer. Ao exportar um ● Revisado, o cartão é atualizado (sem duplicar) e o item volta a ✓ No baralho |
-| Nada é apagado | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
+| Limpar (nos Descartados) | A palavra sai do plugin e não volta do Vocabulary Builder; volta só se você a adicionar pelo livro. O Anki Viewer não é tocado |
+| Nada é apagado sozinho | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
 
 **Migração da versão 1:**
 - Na primeira abertura, as palavras já exportadas pela 1.x viram ✓ No baralho, com a
@@ -393,7 +400,7 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 189 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 201 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 

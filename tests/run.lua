@@ -832,6 +832,54 @@ if REPLAY and REPLAY ~= "" then
     end)
 end
 
+scenario("Descartados: Limpar tira do plugin e não volta do Vocabulary Builder", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local reader = fakeReader()
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    p:onReaderReady()
+    p:onVocab2DeckOpen()
+    p:getStore():setStatus({ "w:quixotic", "w:ephemeral" }, "discarded")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^Descartados")
+    local target
+    walk(paintTop(), function(w) if w.text == "quixotic" and w.dimen then target = w return true end end)
+    tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
+    local exact = {}
+    for _, t in ipairs(texts()) do exact[t] = true end
+    check(exact["Limpar"] and not exact["× Descartar"] and exact["○ Inbox"], "Limpar no lugar de Descartar: " .. screenText())
+    noOffscreen("seleção nos descartados")
+    snap("12_descartados_limpar")
+    tapText("Selecionar todas")
+    tapText("^Limpar$")
+    check(LAST_confirmbox and contains(LAST_confirmbox.text, "Limpar 2 palavras?"), "confirmação")
+    confirm()
+    check(contains(info(), "2 palavras limpas"), "aviso")
+    eq(p:getStore():counts().discarded, 0, "nenhum descartado")
+    eq(p:getStore():get("w:quixotic"), nil, "saiu do plugin")
+    -- a leitura do Vocabulary Builder não traz de volta
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():get("w:quixotic"), nil, "não voltou do Vocabulary Builder")
+    eq(p:getStore():count({}), 1, "só serendipity no plugin")
+    -- fora da seleção nos outros status, continua Descartar
+    tapText("^Inbox")
+    walk(paintTop(), function(w) if w.text == "serendipity" and w.dimen then target = w return true end end)
+    tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
+    check(has("× Descartar") and not has("^Limpar$"), "Inbox continua com Descartar")
+    -- adicionar pelo livro traz de volta
+    UIM.stack = {}
+    reader.highlight.selected_text = { text = "quixotic" }
+    reader.highlight.buttons.vocab2deck_add(reader.highlight).callback()
+    check(has("Novo cartão"), "editor de novo cartão: " .. screenText())
+    tapText("^Salvar no Inbox")
+    eq(p:getStore():get("w:quixotic").status, "inbox", "voltou pelo livro")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():get("w:quixotic").status, "inbox", "e fica depois da leitura do Vocabulary Builder")
+end)
+
 scenario("lista: seleção em massa e busca", function()
     local data = freshEnv()
     makeVocab(data, WORDS)

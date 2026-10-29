@@ -135,6 +135,23 @@ function Items:bulkStatus(status)
     self:endSelection()
 end
 
+-- Limpar (só nos Descartados): tira as palavras do plugin, sem voltar do Vocabulary Builder.
+function Items:bulkClear()
+    local keys = self:selectedKeys()
+    if #keys == 0 then return end
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = T(_("Limpar %1 palavras?\n\nElas saem do plugin e não voltam do Vocabulary Builder. Para trazer uma de volta, adicione-a de novo pelo livro (＋ Adicionar ao baralho). Cartões no Anki Viewer não são apagados."), #keys),
+        ok_text = _("Limpar"),
+        ok_callback = function()
+            Safe.run(_("limpar"), function() self.host:getStore():clear(keys) end)
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{ text = T(_("%1 palavras limpas."), #keys), timeout = 3 })
+            self:endSelection()
+        end,
+    })
+end
+
 -- Montagem -------------------------------------------------------------------------------
 
 function Items:subheader(w)
@@ -154,9 +171,12 @@ end
 function Items:bottom(w)
     if self.selecting then
         local any = self:selectedCount() > 0
+        local in_discarded = (self.filter.statuses or {}).discarded
         return Kit.bottomBar(w, {
             { text = _("✕"), weight = 0.5, callback = function() self:endSelection() end },
-            { text = _("× Descartar"), enabled = any, callback = function() self:bulkStatus("discarded") end },
+            in_discarded
+                and { text = _("Limpar"), enabled = any, callback = function() self:bulkClear() end }
+                or { text = _("× Descartar"), enabled = any, callback = function() self:bulkStatus("discarded") end },
             { text = _("○ Inbox"), enabled = any, callback = function() self:bulkStatus("inbox") end },
             { text = _("● Revisado"), weight = 1.4, primary = true, enabled = any, callback = function() self:bulkStatus("ready") end },
         }, { size = Kit.SIZE.small })
