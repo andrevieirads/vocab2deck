@@ -1,13 +1,20 @@
 --[[--
-Anki Viewer 1.4.0 embutido no vocab2deck: a tela de estudo (Mostrar resposta,
-Again/Hard/Good/Easy, Decks, Import, Settings, Delete) é a do Anki Viewer, sem
-mudanças de comportamento. Copiado de ankiviewer.koplugin/main.lua.
+Anki Viewer 1.4.0 embutido no vocab2deck: a tela de estudo (Show answer,
+Again/Hard/Good/Easy, Delete, toque no cartão para o texto inteiro), a
+importação de .apkg e as opções de estudo são as do Anki Viewer. Copiado de
+ankiviewer.koplugin/main.lua.
 
-Mudanças em relação ao original (só para viver dentro deste plugin):
+Mudanças em relação ao original (para viver dentro deste plugin):
 * os require apontam para vocab2deck/ankiviewer/db e vocab2deck/ankiviewer/apkg_import
   (nomes próprios, para não misturar com um ankiviewer.koplugin instalado);
 * init não registra a entrada "Anki Viewer" no menu: quem abre a tela de estudo
-  é o botão Estudar do vocab2deck (e o gesto "estudar").
+  é o vocab2deck (lista de baralhos no Início, Estudar, gesto "estudar");
+* a barra de cima da tela de estudo é só "‹ Voltar | Fechar" (Voltar volta ao
+  Início, Fechar fecha o plugin). Decks, Settings e Import saíram dela: a lista
+  de baralhos e o Importar ficam no Início, as opções nas Configurações;
+* no fim do arquivo, funções para o vocab2deck chamar (openDeck, deleteDeck,
+  openDeckFieldMapping) e o aviso decksChanged depois de importar.
+showDeckSelection e showSettingsMenu continuam aqui, sem uso.
 Banco, pasta shared e configurações continuam os mesmos do Anki Viewer
 (<dados>/ankiviewer/ankiviewer.sqlite3, settings/ankiviewer.lua,
 ankiviewer_mappings, ankiviewer_inspect_cache): o progresso de quem já
@@ -435,11 +442,16 @@ function AnkiViewerStudyScreen:init()
         self.card_frame.onTap = function() self:showFullText() end
     end
 
-    -- Top controls row: Settings | Close, with deck title below
+    -- Top controls row. Embutido no vocab2deck: só "Voltar | Fechar" (Decks,
+    -- Settings e Import ficam no Início e nas Configurações do vocab2deck).
+    -- Voltar volta para o Início; Fechar fecha o plugin.
     self.close_button = Button:new{
-        text = _("Close"),
+        text = _("Fechar"),
         callback = function()
             self:onClose()
+            if self.plugin and self.plugin.on_close_all then
+                self.plugin.on_close_all()
+            end
         end,
         text_font_face = "cfont",
         text_font_size = 24,
@@ -449,37 +461,12 @@ function AnkiViewerStudyScreen:init()
         radius = 0,
     }
 
-    self.decks_button = Button:new{
-        text = _("Decks"),
+    self.back_button = Button:new{
+        text = _("‹ Voltar"),
         callback = function()
-            self:showDeckSelection()
-        end,
-        text_font_face = "cfont",
-        text_font_size = 24,
-        text_font_bold = false,
-        bordersize = 0,
-        margin = 0,
-        radius = 0,
-    }
-
-    self.settings_button = Button:new{
-        text = _("Settings"),
-        callback = function()
-            self:showSettingsMenu()
-        end,
-        text_font_face = "cfont",
-        text_font_size = 24,
-        text_font_bold = false,
-        bordersize = 0,
-        margin = 0,
-        radius = 0,
-    }
-
-    self.import_button = Button:new{
-        text = _("Import"),
-        callback = function()
-            if self.plugin and self.plugin.importLocalApkg then
-                self.plugin:importLocalApkg()
+            self:onClose()
+            if self.plugin and self.plugin.on_back then
+                self.plugin.on_back()
             end
         end,
         text_font_face = "cfont",
@@ -492,21 +479,7 @@ function AnkiViewerStudyScreen:init()
 
     local top_controls = HorizontalGroup:new{
         align = "center",
-        self.decks_button,
-        HorizontalSpan:new{ width = Size.span.horizontal_small },
-        TextWidget:new{
-            face = Font:getFace("cfont", 22),
-            text = "|",
-        },
-        HorizontalSpan:new{ width = Size.span.horizontal_small },
-        self.settings_button,
-        HorizontalSpan:new{ width = Size.span.horizontal_small },
-        TextWidget:new{
-            face = Font:getFace("cfont", 22),
-            text = "|",
-        },
-        HorizontalSpan:new{ width = Size.span.horizontal_small },
-        self.import_button,
+        self.back_button,
         HorizontalSpan:new{ width = Size.span.horizontal_small },
         TextWidget:new{
             face = Font:getFace("cfont", 22),
@@ -1459,6 +1432,7 @@ function AnkiViewer:_performApkgImport(file, mapping, merge_opts)
         show_icon = true,
     }
     UIManager:show(msg)
+    self:decksChanged() -- embutido: o Início atualiza a lista de baralhos
 end
 
 -- Changing the field mapping rebuilds the deck's cards; merging (matched by
@@ -2050,4 +2024,40 @@ end
 function AnkiViewer:onScreenClosed()
     self.screen = nil
 end
+
+-- Embutido no vocab2deck ----------------------------------------------------------
+-- O Início do vocab2deck lista os baralhos e as Configurações dele mostram as
+-- opções de estudo; estas funções fazem o que antes ficava nos botões Decks e
+-- Settings da tela de estudo (mesmo código, chamado de fora).
+-- Ganchos que o vocab2deck preenche: on_back, on_close_all, on_decks_changed.
+
+function AnkiViewer:decksChanged()
+    if self.on_decks_changed then self.on_decks_changed() end
+end
+
+-- Abre a tela de estudo num baralho (nil = o último usado, como antes).
+function AnkiViewer:openDeck(deck_id)
+    if deck_id then self:saveSetting("last_deck_id", deck_id) end
+    if self.screen and self.screen.onClose then self.screen:onClose() end
+    self:showLocalStudy()
+end
+
+-- Apaga um baralho e o mapeamento guardado dele (o que Decks ▸ toque longo fazia).
+function AnkiViewer:deleteDeck(deck_id, deck_name)
+    local ok_call, result_or_err = pcall(AnkiDB.deleteDeck, deck_id)
+    if not ok_call or not result_or_err then
+        error(_("Não foi possível apagar o baralho: ") .. tostring(not ok_call and result_or_err or _("erro desconhecido")), 0)
+    end
+    clearDeckMetadataForShortName(deck_name)
+    if tonumber(self:readSetting("last_deck_id")) == deck_id then
+        self:saveSetting("last_deck_id", nil)
+    end
+    self:decksChanged()
+end
+
+-- Field mapping de um baralho importado (o que Settings ▸ Field mapping fazia).
+function AnkiViewer:openDeckFieldMapping(deck)
+    self:openCurrentDeckFieldMapping({ deck_id = deck.id, deck_name = deck.name })
+end
+
 return AnkiViewer

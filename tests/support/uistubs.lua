@@ -1,6 +1,8 @@
 -- Copiado do KR2Anki (dev/uistubs.lua), só para testes no computador. Créditos: autores do KR2Anki.
 -- Alterações: unpack vem de table.unpack quando não existe (Lua 5.2+), e Event guarda os
--- argumentos com table.pack (no Lua 5.4+, {nil, ev} tem tamanho 0 e o unpack perdia o gesto).
+-- argumentos com table.pack (no Lua 5.4+, {nil, ev} tem tamanho 0 e o unpack perdia o gesto);
+-- holdText (toque longo num texto); os grupos quebram, como no KOReader, quando um filho
+-- é inserido depois de getSize.
 local unpack = unpack or table.unpack -- luacheck: ignore
 
 -- Fake KOReader UI layer: enough layout + event semantics to render the
@@ -228,11 +230,17 @@ function HorizontalGroup:getSize()
         local w, h = 0, 0
         for _, c in ipairs(self) do local s = c:getSize(); w = w + s.w; if s.h > h then h = s.h end end
         self._size = Geom:new{ w = w, h = h }
+        self._n = #self
     end
     return self._size
 end
 function HorizontalGroup:paintTo(bb, x, y)
     local s = self:getSize()
+    -- como no KOReader: getSize guarda as posições (_offsets) dos filhos; um filho
+    -- inserido depois não tem posição e a pintura quebra (o KOReader fecha)
+    if #self ~= self._n then
+        error("HorizontalGroup: filho inserido depois de getSize (no KOReader, _offsets[i] é nil e a pintura quebra)")
+    end
     self.dimen = Geom:new{ x = x, y = y, w = s.w, h = s.h }
     self._painted = true
     local cx = x
@@ -252,11 +260,17 @@ function VerticalGroup:getSize()
         local w, h = 0, 0
         for _, c in ipairs(self) do local s = c:getSize(); h = h + s.h; if s.w > w then w = s.w end end
         self._size = Geom:new{ w = w, h = h }
+        self._n = #self
     end
     return self._size
 end
 function VerticalGroup:paintTo(bb, x, y)
     local s = self:getSize()
+    -- como no KOReader: getSize guarda as posições (_offsets) dos filhos; um filho
+    -- inserido depois não tem posição e a pintura quebra (o KOReader fecha)
+    if #self ~= self._n then
+        error("VerticalGroup: filho inserido depois de getSize (no KOReader, _offsets[i] é nil e a pintura quebra)")
+    end
     self.dimen = Geom:new{ x = x, y = y, w = s.w, h = s.h }
     self._painted = true
     local cy = y
@@ -509,6 +523,26 @@ function _G.tapText(pattern, nth)
     local handled = top:handleEvent(Event:new("Gesture", { ges = "tap", pos = pos }))
     UIManager:runTicks()
     return handled
+end
+
+-- Toque longo num texto (hold + hold_release), como tapText.
+function _G.holdText(pattern, nth)
+    local top = paintTop()
+    local found, count = nil, 0
+    walk(top, function(w)
+        local mt = getmetatable(w)
+        if (mt == TextWidget or mt == TextBoxWidget) and w.dimen and tostring(w.text):find(pattern) then
+            count = count + 1
+            if count == (nth or 1) then found = w; return true end
+        end
+    end)
+    if not found then error("text not found on screen: " .. pattern .. "\n  have: " .. table.concat(texts(), " | ")) end
+    local d = found.dimen
+    local pos = Geom:new{ x = d.x + math.floor(d.w / 2), y = d.y + math.floor(d.h / 2) }
+    local Event = require("ui/event")
+    top:handleEvent(Event:new("Gesture", { ges = "hold", pos = pos }))
+    top:handleEvent(Event:new("Gesture", { ges = "hold_release", pos = pos }))
+    UIManager:runTicks()
 end
 
 function _G.tapAt(x, y, ges)

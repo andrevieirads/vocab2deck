@@ -530,4 +530,30 @@ function W:ourDecks()
     end)
 end
 
+--[[--
+Todos os baralhos do Anki Viewer (os deste plugin e os importados de .apkg),
+para a lista do Início. Só lê; sem banco, lista vazia (não cria nada).
+@treturn table { {id, name, cards, due, ours} }
+--]]
+function W:allDecks()
+    if self:check() ~= "ok" then return {} end
+    return self:_with(function(conn)
+        local ours = {}
+        if tableExists(conn, "vocab2deck_cards") then
+            for _, r in ipairs(rowsN(conn, 1, "SELECT DISTINCT deck_id FROM vocab2deck_cards;")) do
+                ours[num(r[1])] = true
+            end
+        end
+        local out = {}
+        for _, r in ipairs(rowsN(conn, 4, "SELECT d.id, d.name, COUNT(c.id), "
+                .. "SUM(CASE WHEN c.due <= ? THEN 1 ELSE 0 END) "
+                .. "FROM decks d LEFT JOIN cards c ON c.deck_id = d.id "
+                .. "GROUP BY d.id, d.name ORDER BY d.name COLLATE NOCASE;", self.now())) do
+            local id = num(r[1])
+            out[#out + 1] = { id = id, name = r[2], cards = num(r[3]) or 0, due = num(r[4]) or 0, ours = ours[id] == true }
+        end
+        return out
+    end)
+end
+
 return W

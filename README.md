@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.0.0
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.1.1
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -13,9 +13,11 @@ As palavras chegam ao Inbox de dois jeitos:
 Cada cartão tem **campos editáveis**, como na janela *Adicionar* do Anki. Os cartões são
 gravados direto no banco do Anki Viewer, sem `.apkg`, sem rede e sem AnkiConnect.
 
-**Um plugin só (desde a 3.0.0):** o Anki Viewer 1.4.0 vem embutido em
-`vocab2deck/ankiviewer/`. O botão **Estudar** abre a tela de estudo dele, igual à original
-(*Show answer*, Again / Hard / Good / Easy, Decks, Settings, Import, Delete). Não é preciso
+**Um plugin só (desde a 3.0.0; integrado ao Início na 3.1.0):** o Anki Viewer 1.4.0 vem embutido em
+`vocab2deck/ankiviewer/`. A tela de estudo é a dele (*Show answer*, Again / Hard / Good /
+Easy, Delete), integrada ao plugin: os baralhos ficam numa lista no Início, o *Importar*
+é um botão do Início, as opções de estudo entram nas Configurações, e a barra de cima do
+estudo tem só **‹ Voltar** (volta ao Início) e **Fechar** (fecha o plugin). Não é preciso
 instalar o `ankiviewer.koplugin`. O banco, a pasta `shared` e as configurações são os mesmos
 do Anki Viewer, então o progresso de quem já estudava nele continua.
 
@@ -141,9 +143,11 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
 - Duas linhas de botões, embaixo dos status:
   - **⌕ Buscar · Sincronizar (N) · Configurações**
-  - **＋ Adicionar · Campos · Estudar** (abre a tela de estudo do Anki Viewer embutido;
-    com mais de um baralho do plugin, pergunta qual; sem nenhum exportado, abre no último
-    baralho estudado, como o Anki Viewer abria)
+  - **＋ Adicionar · Campos · Importar · Estudar**
+  - *Importar* abre a lista de `.apkg` da pasta `koreader/ankiviewer/shared` (o *Import* do
+    Anki Viewer, com o mapeamento de campos e Merge / Replace).
+  - *Estudar* abre a tela de estudo nos baralhos deste plugin (com mais de um, pergunta
+    qual; sem nenhum exportado, abre no último baralho estudado).
   - *＋ Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
     **Novo cartão** com um **tipo próprio, só com Frente e Verso**:
     - **Frente** é o texto digitado.
@@ -235,6 +239,21 @@ cartões de *＋ Adicionar cartão* têm o tipo fixo Frente/Verso):
 - Resultado: N cartões novos, palavras sem definição (ficam onde estavam), falhas e
   backup, com os botões **Estudar** · Fechar.
 
+- **Baralhos:** todos os baralhos do Anki Viewer (os deste plugin e os importados), com
+  quantos estão para estudar e quantos cartões têm.
+  - Tocar num baralho abre a tela de estudo nele.
+  - Toque longo: *Estudar*, *Mapeamento de campos* (só baralhos importados de `.apkg`) e
+    *Apagar baralho* (com confirmação; apaga os cartões e o progresso).
+  - Em retrato, a lista ocupa o espaço que sobra embaixo; em paisagem, uma coluna à
+    direita. Se não couberem todos, a última linha é *Todos os baralhos (N)…*.
+
+**Estudo** (tela do Anki Viewer embutido):
+- Barra de cima: **‹ Voltar** (fecha o estudo e mostra o Início, com as contagens
+  atualizadas) e **Fechar** (fecha o estudo e o plugin). Aberto por gesto, sem o Início
+  aberto, *Voltar* abre o Início.
+- O resto é o Anki Viewer: o nome do baralho, o cartão (toque para o texto inteiro),
+  *Show answer*, Again / Hard / Good / Easy com os intervalos e Delete.
+
 **＋ Adicionar ao baralho** (no livro):
 - **Selecione um trecho** (toque longo e arraste): o botão aparece no menu da seleção.
 - **Toque longo numa palavra:** o botão aparece no popup do dicionário, e a definição que
@@ -303,6 +322,13 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 - verificar definições nos dicionários
 - recriar cartões apagados
 - onde ficam os backups
+- **Estudo** (as opções do *Settings* do Anki Viewer, nas mesmas chaves de
+  `settings/ankiviewer.lua`):
+  - aleatório entre cartões do mesmo dia
+  - cartões novos por dia (0 = sem limite)
+  - tela cheia (vale na próxima vez que o estudo abrir)
+  - intervalo mínimo (padrão, 1, 3, 7 ou 14 dias)
+  - mapeamento de campos de um baralho importado
 
 ---
 
@@ -381,8 +407,16 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
    - Deslize para a direita e mude uma decisão.
    - No resumo, toque em **Exportar (3)**, depois em **Exportar**. Esperado: *3 cartões
      novos adicionados.*
-   - Toque em **Estudar**. Esperado: abre a tela de estudo do Anki Viewer; a frente mostra a palavra e a frase;
+   - Toque em **Estudar** (ou no baralho, na lista *Baralhos* do Início). Esperado: abre a
+     tela de estudo, com *‹ Voltar | Fechar* em cima; a frente mostra a palavra e a frase;
      *Show answer* mostra a frente, o separador e o verso.
+   - Responda um cartão e toque em **‹ Voltar**. Esperado: o Início volta, com a contagem
+     "para estudar" do baralho menor. Abra o baralho de novo e toque em **Fechar**: o plugin
+     fecha.
+   - No Início, toque em **Importar** e importe um `.apkg` seu: ele aparece em *Baralhos*.
+     Toque longo nele ▸ *Apagar baralho* o remove.
+   - Em **Configurações**, mude *Estudo: cartões novos por dia* e abra o estudo: vale o
+     novo limite.
 3. **Segunda exportação sem novas:** Exportar mostra **0** e o botão fica desativado. No
    Anki Viewer, continuam 3 cartões e os revisados mantêm os intervalos.
 4. **Edição e definição alterada**
@@ -426,6 +460,9 @@ tests/run_tests.sh --previews
 - As telas de verdade rodam sobre os widgets de teste do KR2Anki (`tests/support/uistubs.lua`:
   layout, toques e deslizes).
 - Verifica que nenhum texto sai da tela e nenhum conteúdo passa da caixa.
+- Os grupos de teste quebram, como no KOReader, quando um item é inserido num
+  `VerticalGroup`/`HorizontalGroup` depois de medido (`getSize`). Foi o que fechava o KOReader
+  ao abrir o plugin na 3.1.0.
 - Usa o **banco real do Anki Viewer embutido** (`vocab2deck/ankiviewer/db.lua`) sobre o
   mesmo arquivo, para provar que ele lê os cartões e que revisar, apagar e editar convivem.
 - Abre a **tela de estudo real** do Anki Viewer embutido pelo gesto *estudar*: confere o
@@ -440,7 +477,11 @@ tests/run_tests.sh --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 240 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Também confere a integração no Início: a lista de baralhos (tocar estuda, toque longo
+  dá as opções, *Apagar baralho* apaga), *Todos os baralhos (N)…* quando não cabem,
+  *Importar*, *‹ Voltar* / *Fechar* na tela de estudo e as opções de estudo nas
+  Configurações gravadas nas chaves do Anki Viewer.
+- Resultado atual: 278 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 
@@ -454,8 +495,10 @@ tests/run_tests.sh --previews
    são detectadas por `PRAGMA table_info`.
 3. **Espaços no contexto:** segui a convenção dos testes do KR2Anki (o contexto inclui os
    espaços em volta da palavra).
-4. **Anki Viewer embutido:** é uma cópia da 1.4.0. As únicas mudanças são os `require` (nomes
-   próprios em `vocab2deck/ankiviewer/`) e a entrada de menu "Anki Viewer", que saiu. Uma
+4. **Anki Viewer embutido:** é uma cópia da 1.4.0. As mudanças estão no topo de
+   `vocab2deck/ankiviewer/viewer.lua`: os `require` (nomes próprios), a entrada de menu
+   "Anki Viewer" (saiu), a barra de cima do estudo (só *‹ Voltar* / *Fechar*) e algumas
+   funções no fim do arquivo para o Início e as Configurações chamarem. Uma
    versão nova do Anki Viewer não chega sozinha: é preciso copiar os arquivos de novo. A
    tela de estudo foi testada com os widgets de teste, não no Paperwhite. O esquema do banco
    está fixado na versão 4.

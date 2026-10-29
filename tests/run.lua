@@ -152,11 +152,21 @@ local function fakeDict(defs, fail)
     }
 end
 
+-- Anki Viewer embutido de mentira (as funções que o vocab2deck chama).
 local function fakeAV()
-    local av = { settings = {}, opened = 0 }
+    local av = { settings = {}, opened = 0, imports = 0, mappings = 0 }
     function av:saveSetting(k, v) self.settings[k] = v end
-    function av:readSetting(k) return self.settings[k] end
+    function av:readSetting(k, default)
+        if self.settings[k] == nil then return default end
+        return self.settings[k]
+    end
     function av:showLocalStudy() self.opened = self.opened + 1 end
+    function av:openDeck(id)
+        if id then self:saveSetting("last_deck_id", id) end
+        self:showLocalStudy()
+    end
+    function av:importLocalApkg() self.imports = self.imports + 1 end
+    function av:openDeckFieldMapping(d) self.mappings = self.mappings + 1; self.mapped = d end
     return av
 end
 
@@ -1091,8 +1101,12 @@ scenario("Anki Viewer embutido: Estudar abre a tela de estudo dele", function()
     local card_id = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:serendipity'"))
     local deck_id = tonumber(scalar(data, "SELECT deck_id FROM cards WHERE id = " .. card_id))
     UIM.stack = {}
+    _G.VIEWER_BUTTONS = {}
     p:onVocab2DeckReview() -- gesto "estudar"
     local study = UIM:top()
+    check(VIEWER_BUTTONS["‹ Voltar"] and VIEWER_BUTTONS["Fechar"], "barra de cima: Voltar e Fechar")
+    check(not VIEWER_BUTTONS["Decks"] and not VIEWER_BUTTONS["Import"] and not VIEWER_BUTTONS["Settings"],
+        "Decks, Settings e Import saíram da tela de estudo")
     check(study and study.card_widget, "tela de estudo do Anki Viewer aberta")
     eq(study.deck_id, deck_id, "no baralho exportado")
     eq(study.current_card and study.current_card.id, card_id, "o cartão exportado")
@@ -1112,6 +1126,35 @@ scenario("Anki Viewer embutido: Estudar abre a tela de estudo dele", function()
     tapText("^Exportar %(1%)")
     eq(sched(data, card_id), before, "progresso mantido")
 
+    -- Início → baralho → estudo; Voltar volta ao Início, Fechar fecha tudo
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    check(has("BARALHOS") and has("Vocabulary Builder"), "baralho na lista do Início: " .. screenText())
+    _G.VIEWER_BUTTONS = {}
+    tapText("^Vocabulary Builder$")
+    check(UIM:top() and UIM:top().card_widget, "tocar no baralho abre o estudo")
+    eq(UIM:top().deck_id, deck_id, "no baralho tocado")
+    VIEWER_BUTTONS["‹ Voltar"]:onTapSelectButton()
+    eq(UIM:top() and UIM:top().name, "vocab2deck_home", "Voltar mostra o Início")
+    eq(av.screen, nil, "estudo fechado")
+    tapText("^Vocabulary Builder$")
+    VIEWER_BUTTONS["Fechar"]:onTapSelectButton()
+    check(p.app == nil or #p.app.stack == 0, "Fechar fecha o plugin")
+    eq(#UIM.stack, 0, "nada na tela")
+
+    -- apagar um baralho importado pelo toque longo (Apagar baralho)
+    local conn = SQ3.open(avDbPath(data))
+    conn:exec("INSERT INTO decks (name) VALUES ('Importado'); INSERT INTO cards (deck_id, front, back) SELECT id, 'q', 'a' FROM decks WHERE name = 'Importado';")
+    conn:close()
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    holdText("^Importado$")
+    check(LAST_buttondialog and LAST_buttondialog.title == "Importado", "opções do baralho")
+    pressDialogButton(LAST_buttondialog, "Apagar baralho")
+    confirm(LAST_confirmbox)
+    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM decks WHERE name = 'Importado'")), 0, "baralho apagado")
+    check(not has("Importado"), "e some do Início")
+
     -- sem nada exportado, Estudar abre o estudo como o Anki Viewer abria
     local data2 = freshEnv()
     makeVocab(data2, WORDS)
@@ -1122,6 +1165,70 @@ scenario("Anki Viewer embutido: Estudar abre a tela de estudo dele", function()
     UIM.stack = {}
     p2:studyNow()
     check(UIM:top() and UIM:top().card_widget, "abriu o estudo sem baralho exportado")
+end)
+
+scenario("Início: lista de baralhos, Importar e opções", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p.settings:set("subdeck_per_book", true)
+    p:syncVocab()
+    p:getStore():setStatus({ "w:serendipity", "w:ephemeral", "w:quixotic" }, "ready")
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(3%)")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    check(has("BARALHOS") and has("Livro A") and has("Livro B"), "baralhos no Início: " .. screenText())
+    check(has("2 para estudar · 2 cartões"), "contagem do baralho")
+    noOffscreen("início com baralhos")
+    snap("15_inicio_baralhos")
+    local id_b = tonumber(scalar(data, "SELECT id FROM decks WHERE name = 'Livro B'"))
+    tapText("^Livro B$")
+    eq(p.viewer.opened, 1, "tocar no baralho estuda")
+    eq(p.viewer.settings.last_deck_id, id_b, "o baralho tocado")
+    holdText("^Livro A$")
+    local labels = {}
+    for _, b in ipairs(dialogButtons(LAST_buttondialog)) do labels[b] = true end
+    check(labels["Estudar"] and labels["Apagar baralho"], "opções: Estudar e Apagar")
+    check(not labels["Mapeamento de campos"], "sem mapeamento para baralho do plugin")
+    pressDialogButton(LAST_buttondialog, "Fechar")
+    tapText("^Importar$")
+    eq(p.viewer.imports, 1, "Importar abre o Import do Anki Viewer")
+
+    -- muitos baralhos: os que cabem e "Todos os baralhos (N)…"
+    local conn = SQ3.open(avDbPath(data))
+    for i = 1, 12 do conn:exec(string.format("INSERT INTO decks (name) VALUES ('Importado %02d');", i)) end
+    conn:close()
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    check(has("Todos os baralhos (14)"), "linha para a lista inteira: " .. screenText())
+    noOffscreen("início com muitos baralhos")
+    tapText("^Todos os baralhos")
+    eq(LAST_menu and #LAST_menu.item_table, 14, "lista inteira")
+    LAST_menu:onMenuHold(LAST_menu.item_table[3])
+    pressDialogButton(LAST_buttondialog, "Mapeamento de campos")
+    eq(p.viewer.mappings, 1, "mapeamento de campos de um baralho importado")
+end)
+
+scenario("configurações: opções de estudo do Anki Viewer", function()
+    freshEnv()
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:showSettings()
+    local function item(pat)
+        for _, it in ipairs(LAST_menu.item_table) do if it.text:find(pat) then return it end end
+    end
+    local full = item("^Estudo: tela cheia")
+    eq(full.mandatory_func(), "Não", "tela cheia desligada")
+    LAST_menu:onMenuChoice(full)
+    eq(p.viewer.settings.fullscreen_study, true, "mesma chave do Anki Viewer")
+    LAST_menu:onMenuChoice(item("^Estudo: cartões novos"))
+    LAST_inputdialog._input = "35"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(p.viewer.settings.daily_new_cards_limit, 35, "cartões novos por dia")
+    LAST_menu:onMenuChoice(item("^Estudo: intervalo"))
+    pressDialogButton(LAST_buttondialog, "7 dias")
+    eq(p.viewer.settings.min_interval_days, 7, "intervalo mínimo")
+    eq(item("^Estudo: intervalo").mandatory_func(), "7 d", "valor mostrado")
 end)
 
 scenario("configurações sem erro", function()
