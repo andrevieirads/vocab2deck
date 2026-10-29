@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.2
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.3
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -131,14 +131,25 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   ○ Inbox · ● Revisados · ✓ No baralho · × Descartados.
 - Avisos: palavras novas que vieram do Vocabulary Builder, cartões apagados, erros.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
-- Linha de ações: ⌕ Buscar · Campos · Configurações; e *Estudar no Anki Viewer*.
+- Linha de ações: ⌕ Buscar · Campos · Configurações.
+- *Estudar no Anki Viewer* · **Sincronizar (N)**: manda de novo os itens ✓ No baralho.
+  - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
+    agendamento não muda**.
+  - Cartões que sumiram do Anki Viewer são criados de novo.
+  - Cartões fora do baralho certo são movidos.
+  - O `Vocab2Deck.apkg` é regravado.
 - Barra de baixo: **Revisar (N)** · **Exportar (N)**.
 
 **Lista:**
-- Linhas paginadas com a palavra, o livro, a definição curta e o símbolo do status.
+- Linhas paginadas com a palavra, o livro, o **verso** curto e o símbolo do status. O verso
+  curto é a definição ou, se não houver, o primeiro campo do verso que você escreveu (por
+  exemplo, as Notas de um cartão criado no livro).
 - Ordem *Mais novas* / *A–Z*, e busca.
 - **Toque longo** entra no modo de seleção: *Selecionar todas*, e depois × Descartar,
-  ○ Inbox ou ● Revisado em massa.
+  ○ Inbox ou ● Revisado em massa, inclusive na lista ✓ No baralho.
+  - O cartão continua no Anki Viewer, com o progresso.
+  - Ao exportar de novo um ● Revisado que já tem cartão, o cartão recebe o texto atual e o
+    item volta a ✓ No baralho, sem duplicar.
 - Tocar numa linha abre a palavra.
 
 **Revisar** (uma palavra por tela):
@@ -168,9 +179,15 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 
 **Modelo de campos** (o "tipo de nota"):
 - Padrão: Palavra (F) · Frase (F) · Definição (V) · Livro (V) · Notas (V).
-- Tocar num campo abre: Frente / Verso / Não mostrar, Renomear, ↑ Subir / ↓ Descer,
-  e Remover (só nos campos criados por você).
-- **+ Campo** adiciona ao modelo; **Padrão** restaura o modelo inicial.
+- Tocar num campo abre: ✎ Renomear, Frente / Verso / Não mostrar, ↑ Subir / ↓ Descer e
+  − Remover este campo. Vale para **qualquer** campo, inclusive Palavra, Frase, Definição e
+  Livro.
+- **− Campo** escolhe um campo para remover.
+  - Campo seu: o texto escrito nele some.
+  - Campo do plugin: as suas edições ficam guardadas para quando ele voltar.
+- **+ Campo** cria um campo vazio (você escreve) ou traz de volta um campo do plugin que foi
+  removido.
+- **Padrão** restaura o modelo inicial. O cartão precisa de pelo menos um campo.
 
 **Exportar:**
 - Pré-checagem: N revisados, o baralho de destino, inversos pendentes, e a caixa
@@ -200,8 +217,10 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 **Pacote para o Anki** (passo da exportação, sem tela própria):
 - A cada exportação, o plugin grava `koreader/ankiviewer/shared/Vocab2Deck.apkg` com **todos**
   os cartões que estão no baralho.
-- Também regrava o pacote ao fechar o plugin, se algum cartão no baralho mudou (edição,
-  atualização automática).
+- Também grava o pacote ao fechar o plugin, se algum cartão no baralho mudou (edição,
+  atualização automática) **ou se o arquivo ainda não existe**. Assim ele aparece mesmo
+  quando tudo já estava exportado e o botão mostra *Exportar (0)*.
+- Entram todos os cartões do plugin que existem no Anki Viewer, menos os de itens descartados.
 - Estrutura no Anki:
 
   ```
@@ -266,10 +285,11 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 | Mudou o modelo, a definição ou o contexto | Ao abrir o plugin (ou voltar ao Início), os cartões são atualizados sozinhos; o progresso fica |
 | Mudou o baralho (nome ou *um baralho por livro*) | Os cartões são movidos para o baralho novo; o progresso vai junto; o baralho antigo vazio é apagado |
 | Cartão editado fora do plugin (versão 1, outro programa) | Não é sobrescrito sozinho: o Início mostra *Atualizar N cartões alterados…* |
-| Sem definição | Pula e fica onde estava; você pode escrever a definição no editor ou ativar *Criar cartão* |
-| Cartão apagado no Anki Viewer | Não volta, a não ser por *Recriar cartões apagados* |
+| Verso vazio (sem definição e sem nenhum campo do verso escrito por você) | Pula e fica onde estava. Um cartão do livro só com *Notas* é exportado normalmente |
+| Cartão apagado no Anki Viewer | Não volta na exportação; **Sincronizar** ou *Recriar cartões apagados* o trazem de volta |
 | Baralho apagado no Anki Viewer | O controle é limpo; os itens são recriados na próxima exportação |
 | × Descartado depois de exportado | O cartão continua no Anki Viewer; apague lá se quiser |
+| Item mandado de ✓ No baralho para ○ Inbox ou ● Revisado | O status fica como você escolheu; o cartão continua no Anki Viewer. Ao exportar um ● Revisado, o cartão é atualizado (sem duplicar) e o item volta a ✓ No baralho |
 | Nada é apagado | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
 
 **Migração da versão 1:**
@@ -371,7 +391,9 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os baralhos, os campos e os arrays JSON;
   - o checksum das notas;
   - os GUIDs estáveis entre duas exportações.
-- Resultado atual: 164 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
+  (`settings/` e `ankiviewer/`).
+- Resultado atual: 189 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 

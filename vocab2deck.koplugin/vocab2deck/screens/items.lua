@@ -12,6 +12,7 @@ local BaseScreen = require("vocab2deck/ui/screen")
 local Kit = require("vocab2deck/ui/kit")
 local Parse = require("vocab2deck/lib/dictparse")
 local Safe = require("vocab2deck/safe")
+local Tpl = require("vocab2deck/template")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -56,10 +57,10 @@ function Items:rowWidget(r, width)
     if r.book then
         table.insert(word, Kit.text(r.book, Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK, max_width = word_w }))
     end
-    -- a definição escrita por você vale no lugar da do dicionário
-    local meaning = (r.my_def and r.my_def ~= "") and r.my_def or r.definition
+    -- o verso do cartão: a definição, ou o campo que você escreveu (ex.: Notas)
+    local meaning = r.back_preview
     local mean_text = (meaning and meaning ~= "") and Parse.shortMeaning(meaning, 60)
-        or (r.looked_up == 1 and _("sem definição") or "—")
+        or _("verso vazio")
     local mean = Kit.textbox(mean_text, Kit.ui(Kit.SIZE.small), mean_w, { max_lines = 2,
         fgcolor = (meaning and meaning ~= "") and Kit.BLACK or Kit.GREY_DARK })
     local h = self.row_h
@@ -123,8 +124,12 @@ function Items:bulkStatus(status)
     end)
     local InfoMessage = require("ui/widget/infomessage")
     local text = T(_("%1 marcados como %2."), #keys, Kit.STATUS_NAME[status])
-    if status == "discarded" and self.filter.statuses and self.filter.statuses.deck then
-        text = text .. "\n\n" .. _("Os cartões continuam no Anki Viewer; apague-os lá se quiser.")
+    if self.filter.statuses and self.filter.statuses.deck then
+        if status == "discarded" then
+            text = text .. "\n\n" .. _("Os cartões continuam no Anki Viewer; apague-os lá se quiser.")
+        else
+            text = text .. "\n\n" .. _("O cartão continua no Anki Viewer com o progresso; ao exportar de novo, ele recebe o texto atual (nada é duplicado).")
+        end
     end
     UIManager:show(InfoMessage:new{ text = text, timeout = 3 })
     self:endSelection()
@@ -209,7 +214,11 @@ function Items:build(w, h)
     self.pages = math.max(1, math.ceil(self.total / per_page))
     self.page = math.max(1, math.min(self.page or 1, self.pages))
     local list = VerticalGroup:new{ align = "left" }
-    for __, r in ipairs(self.host:getStore():query(self.filter, self.sort, (self.page - 1) * per_page, per_page)) do
+    local store = self.host:getStore()
+    local model, opts = self.host:model(), self.host.settings:cardOptions()
+    for __, r in ipairs(store:query(self.filter, self.sort, (self.page - 1) * per_page, per_page)) do
+        local item = store:get(r.vkey)
+        r.back_preview = item and Tpl.backPreview(Tpl.fields(item, model, opts)) or nil
         table.insert(list, self:rowWidget(r, cw))
         table.insert(list, Kit.hline(cw, Kit.dp(1), Kit.GREY_LIGHT))
     end

@@ -319,6 +319,11 @@ function Review:sensesBlock(cw, avail)
     local label = Kit.sectionLabel(_("Escolha o sentido"), cw,
         it.dict and Kit.text(T(_("%1 sentidos"), #it.senses), Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK }) or nil)
     table.insert(g, label)
+    if not df then
+        table.insert(g, Kit.textbox(_("O campo Definição foi removido do modelo (Campos ▸ + Campo traz de volta)."),
+            Kit.ui(Kit.SIZE.small), cw, { fgcolor = Kit.GREY_DARK }))
+        return g
+    end
     local chosen = df and it.overrides[df.id]
     local is_sense = false
     for __, sense in ipairs(it.senses) do if sense == chosen then is_sense = true end end
@@ -399,6 +404,10 @@ function Review:bottomButtons()
         b[#b + 1] = { text = _("✓ Revisado"), primary = true, callback = function() self:decide("ready") end }
     elseif st == "ready" then
         b[#b + 1] = { text = _("○ Inbox"), callback = function() self:decide("inbox") end }
+        b[#b + 1] = { text = _("× Descartar"), callback = function() self:decide("discarded") end }
+    elseif st == "deck" then
+        b[#b + 1] = { text = _("○ Inbox"), callback = function() self:decide("inbox") end }
+        b[#b + 1] = { text = _("● Revisado"), callback = function() self:decide("ready") end }
         b[#b + 1] = { text = _("× Descartar"), callback = function() self:decide("discarded") end }
     elseif st == "discarded" then
         b[#b + 1] = { text = _("○ Voltar ao Inbox"), primary = true, callback = function() self:decide("inbox") end }

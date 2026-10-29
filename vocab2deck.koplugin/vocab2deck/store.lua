@@ -195,13 +195,10 @@ function Store:syncFromVocab(words, opts)
                 res.updated = res.updated + 1
                 res.total = res.total + 1
             elseif status then
+                -- o status fica como está (você pode ter mandado de volta ao Inbox de propósito)
                 exec(conn, "UPDATE items SET word = ?, book = ?, prev = ?, next = ?, highlight = ?, created = ?, "
                     .. "streak = ?, in_vocab = 1 WHERE vkey = ?",
                     w.word, w.book, w.prev, w.next, w.highlight, w.created, w.streak, w.key)
-                -- exportada por outra versão / outro caminho: passa a ✓ No baralho
-                if exported[w.key] and status ~= "deck" and status ~= "discarded" then
-                    exec(conn, "UPDATE items SET status = 'deck', updated_at = ? WHERE vkey = ?", now, w.key)
-                end
                 res.updated = res.updated + 1
                 res.total = res.total + 1
             elseif not (opts.skip and opts.skip(w)) or exported[w.key] then
