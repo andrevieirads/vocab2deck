@@ -832,6 +832,125 @@ if REPLAY and REPLAY ~= "" then
     end)
 end
 
+scenario("Descartados: Limpar tira do plugin e não volta do Vocabulary Builder", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local reader = fakeReader()
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    p:onReaderReady()
+    p:onVocab2DeckOpen()
+    p:getStore():setStatus({ "w:quixotic", "w:ephemeral" }, "discarded")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^Descartados")
+    local target
+    walk(paintTop(), function(w) if w.text == "quixotic" and w.dimen then target = w return true end end)
+    tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
+    local exact = {}
+    for _, t in ipairs(texts()) do exact[t] = true end
+    check(exact["Limpar"] and not exact["× Descartar"] and exact["○ Inbox"], "Limpar no lugar de Descartar: " .. screenText())
+    noOffscreen("seleção nos descartados")
+    snap("12_descartados_limpar")
+    tapText("Selecionar todas")
+    tapText("^Limpar$")
+    check(LAST_confirmbox and contains(LAST_confirmbox.text, "Limpar 2 palavras?"), "confirmação")
+    confirm()
+    check(contains(info(), "2 palavras limpas"), "aviso")
+    eq(p:getStore():counts().discarded, 0, "nenhum descartado")
+    eq(p:getStore():get("w:quixotic"), nil, "saiu do plugin")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():get("w:quixotic"), nil, "não voltou do Vocabulary Builder")
+    eq(p:getStore():count({}), 1, "só serendipity no plugin")
+    tapText("^Inbox")
+    walk(paintTop(), function(w) if w.text == "serendipity" and w.dimen then target = w return true end end)
+    tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
+    check(has("× Descartar") and not has("^Limpar$"), "Inbox continua com Descartar")
+    UIM.stack = {}
+    reader.highlight.selected_text = { text = "quixotic" }
+    reader.highlight.buttons.vocab2deck_add(reader.highlight).callback()
+    check(has("Novo cartão"), "editor de novo cartão: " .. screenText())
+    tapText("^Salvar no Inbox")
+    eq(p:getStore():get("w:quixotic").status, "inbox", "voltou pelo livro")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():get("w:quixotic").status, "inbox", "e fica depois da leitura do Vocabulary Builder")
+end)
+
+scenario("Início: ＋ Adicionar cartão e − Campo (só deste cartão ou do modelo)", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local defs = { ["carpe diem"] = "aproveite o dia" }
+    for k, v in pairs(DEFS) do defs[k] = v end
+    local p = newPlugin(fakeDict(defs), fakeAV(), fakeReader())
+    p:onReaderReady()
+    p:onVocab2DeckOpen()
+    noOffscreen("início com adicionar cartão")
+    snap("13_inicio_adicionar")
+    tapText("Adicionar cartão")
+    LAST_inputdialog._input = "carpe diem"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("Novo cartão") and has("carpe diem") and has("Salvar no Inbox"), "editor do novo cartão: " .. screenText())
+    check(has("aproveite o dia"), "definição buscada no dicionário")
+    check(has("— Dom Quixote"), "livro aberto no Livro")
+    check(has("− Campo") and has("+ Campo"), "os dois botões de campo")
+    noOffscreen("novo cartão manual")
+    snap("14_novo_manual")
+
+    -- − Campo: Frase só deste cartão
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Frase")
+    pressDialogButton(LAST_buttondialog, "Só deste cartão")
+    check(has("removido deste cartão"), "Frase marcada como removida deste cartão: " .. screenText())
+    -- campo extra e depois − Campo nele
+    tapText("^%+ Campo")
+    pressDialogButton(LAST_buttondialog, "Só neste cartão")
+    LAST_inputdialog._input = "Origem"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    pressDialogButton(LAST_buttondialog, "Verso")
+    LAST_inputdialog._input = "latim"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(findOnPages("Origem"), "campo extra criado")
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Origem (só neste cartão)")
+    check(not has("Origem"), "campo extra tirado: " .. screenText())
+    -- − Campo do modelo: Livro de todos os cartões
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Livro")
+    pressDialogButton(LAST_buttondialog, "De todos os cartões")
+    confirm()
+    check(not has("— Dom Quixote"), "Livro tirado do modelo: " .. screenText())
+    local names = {}
+    for _, f in ipairs(p:model()) do names[#names + 1] = f.name end
+    check(not table.concat(names, ","):find("Livro"), "modelo sem Livro: " .. table.concat(names, ","))
+    tapText("^Salvar no Inbox")
+    local it = p:getStore():get("w:carpe diem")
+    eq(it and it.status, "inbox", "foi para o Inbox")
+    eq(it and it.origin, "manual", "origem: manual")
+
+    -- o cartão sai sem a Frase (só deste) e o ⋯ traz de volta
+    p:getStore():setStatus({ "w:carpe diem" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(1%)")
+    local front = scalar(data, "SELECT front FROM cards WHERE source_key = 'vocab2deck:f:w:carpe diem'")
+    eq(front, "carpe diem", "frente sem a Frase")
+    check(contains(scalar(data, "SELECT back FROM cards WHERE source_key = 'vocab2deck:f:w:carpe diem'"), "aproveite o dia"), "verso com a definição")
+    -- outros cartões continuam com a Frase
+    p:getStore():setStatus({ "w:serendipity" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(1%)")
+    check(contains(scalar(data, "SELECT front FROM cards WHERE source_key = 'vocab2deck:f:w:serendipity'"), "It was pure"), "os outros mantêm a Frase")
+    -- ⋯ da Frase: trazer de volta para este cartão (o cartão no baralho é atualizado)
+    UIM.stack = {}
+    p:getApp():open("vocab2deck/screens/editor", { vkey = "w:carpe diem" })
+    check(has("− Campo") and has("Pronto"), "editor normal também tem − Campo: " .. screenText())
+    tapText("^⋯$", 2)
+    pressDialogButton(LAST_buttondialog, "Trazer de volta para este cartão")
+    check(not has("removido deste cartão"), "Frase de volta")
+end)
+
 scenario("lista: seleção em massa e busca", function()
     local data = freshEnv()
     makeVocab(data, WORDS)

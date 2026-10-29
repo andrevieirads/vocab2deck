@@ -105,15 +105,19 @@ end
 
 --[[--
 Campos do item, na ordem: os do modelo e depois os extras.
-@treturn table { {id, name, value, side, source, extra, edited} }
+removed = campo do modelo tirado só deste cartão (não vai para o cartão).
+@treturn table { {id, name, value, side, source, extra, edited, removed} }
 --]]
 function T.fields(item, list, opts)
     local out = {}
     local overrides = item.overrides or {}
+    local sides = item.sides or {}
     for _, f in ipairs(list) do
         local edited = overrides[f.id] ~= nil
+        local removed = sides[f.id] == "none"
         out[#out + 1] = {
-            id = f.id, name = f.name, side = f.side, source = f.source, extra = false, edited = edited,
+            id = f.id, name = f.name, side = removed and "none" or f.side, source = f.source, extra = false,
+            edited = edited, removed = removed,
             value = edited and overrides[f.id] or T.generated(item, f, opts),
         }
     end

@@ -170,6 +170,21 @@ function Vocab2Deck:setModel(list)
     Tpl.save(self.settings, list)
 end
 
+-- Tira um campo do modelo (de todos os cartões). Campo seu: o texto dele some;
+-- campo do plugin: as edições ficam guardadas para quando ele voltar.
+function Vocab2Deck:removeModelField(id)
+    local list = self:model()
+    if #list <= 1 then error(_("O cartão precisa de pelo menos um campo."), 0) end
+    for i, f in ipairs(list) do
+        if f.id == id then
+            table.remove(list, i)
+            if not Tpl.isBuiltin(f) then self:getStore():dropField(f.id) end
+            break
+        end
+    end
+    self:setModel(list)
+end
+
 function Vocab2Deck:addModelField(name, side)
     local list = self:model()
     list[#list + 1] = { id = Tpl.newId(list), name = name, side = side, source = "none" }

@@ -33,12 +33,15 @@
 <text x="59" y="1038" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#999999">‹</text>
 <text x="1536" y="1038" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#000000">›</text>
 <rect x="0" y="1075" width="1648" height="4" fill="#000000"/>
-<rect x="30" y="1102" width="458" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="1103.5" width="455.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="184" y="1169" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">Cancelar</text>
-<rect x="503" y="1102" width="458" height="111" rx="11" fill="#ffffff"/>
-<rect x="504.5" y="1103.5" width="455.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="666" y="1169" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">+ Campo</text>
-<rect x="976" y="1102" width="642" height="111" rx="11" fill="#000000"/>
-<text x="1157" y="1169" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#ffffff">Salvar no Inbox</text>
+<rect x="30" y="1102" width="376" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="1103.5" width="373.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="156" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Cancelar</text>
+<rect x="421" y="1102" width="301" height="111" rx="11" fill="#ffffff"/>
+<rect x="422.5" y="1103.5" width="298.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="511" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">− Campo</text>
+<rect x="737" y="1102" width="301" height="111" rx="11" fill="#ffffff"/>
+<rect x="738.5" y="1103.5" width="298.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="833" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">+ Campo</text>
+<rect x="1053" y="1102" width="565" height="111" rx="11" fill="#000000"/>
+<text x="1220" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#ffffff">Salvar no Inbox</text>
 </svg>

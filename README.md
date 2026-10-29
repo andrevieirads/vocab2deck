@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.3
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.5
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -131,7 +131,11 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   ○ Inbox · ● Revisados · ✓ No baralho · × Descartados.
 - Avisos: palavras novas que vieram do Vocabulary Builder, cartões apagados, erros.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
-- Linha de ações: ⌕ Buscar · Campos · Configurações.
+- Linha de ações: **＋ Adicionar cartão** · ⌕ Buscar · Campos · Configurações.
+  - *＋ Adicionar cartão* pede a frente (uma palavra ou um trecho) e abre o editor de
+    **Novo cartão**, o mesmo do destaque: a definição vem do dicionário quando o texto tem
+    até 4 palavras, e o título do livro vem quando há um aberto.
+  - *Salvar no Inbox* guarda o cartão; *Cancelar* descarta.
 - *Estudar no Anki Viewer* · **Sincronizar (N)**: manda de novo os itens ✓ No baralho.
   - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
     agendamento não muda**.
@@ -147,6 +151,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - Ordem *Mais novas* / *A–Z*, e busca.
 - **Toque longo** entra no modo de seleção: *Selecionar todas*, e depois × Descartar,
   ○ Inbox ou ● Revisado em massa, inclusive na lista ✓ No baralho.
+  - Na lista × Descartados, no lugar de × Descartar fica **Limpar**: depois de confirmar, as
+    palavras saem do plugin.
+  - O plugin registra as palavras limpas, e a leitura do Vocabulary Builder não as traz de
+    volta. Para trazer uma de volta, adicione-a de novo pelo livro com *＋ Adicionar ao
+    baralho*.
+  - Limpar não apaga cartões no Anki Viewer.
   - O cartão continua no Anki Viewer, com o progresso.
   - Ao exportar de novo um ● Revisado que já tem cartão, o cartão recebe o texto atual e o
     item volta a ✓ No baralho, sem duplicar.
@@ -173,6 +183,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   - Renomear, lado e Remover (nos campos só deste cartão)
   - Mudar no modelo (nos campos do modelo)
 - **+ Campo** cria um campo **só neste cartão** ou **no modelo** (todos os cartões).
+- **− Campo** tira um campo.
+  - Campo só deste cartão: sai do cartão.
+  - Campo do modelo: escolha **Só deste cartão** (ele fica marcado "removido deste cartão",
+    e o `⋯` traz de volta) ou **De todos os cartões** (sai do modelo).
+- Os dois botões aparecem no cartão novo (destaque, popup do dicionário e *＋ Adicionar
+  cartão*) e ao editar um cartão existente.
 - **Pré-visualizar** mostra a frente e o verso exatamente como o Anki Viewer vai mostrar.
 - Se a palavra já está no baralho, cada mudança atualiza o cartão na hora, sem mexer no
   progresso.
@@ -290,7 +306,8 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 | Baralho apagado no Anki Viewer | O controle é limpo; os itens são recriados na próxima exportação |
 | × Descartado depois de exportado | O cartão continua no Anki Viewer; apague lá se quiser |
 | Item mandado de ✓ No baralho para ○ Inbox ou ● Revisado | O status fica como você escolheu; o cartão continua no Anki Viewer. Ao exportar um ● Revisado, o cartão é atualizado (sem duplicar) e o item volta a ✓ No baralho |
-| Nada é apagado | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
+| Limpar (nos Descartados) | A palavra sai do plugin e não volta do Vocabulary Builder; volta só se você a adicionar pelo livro. O Anki Viewer não é tocado |
+| Nada é apagado sozinho | Palavras que saem do Vocabulary Builder continuam no plugin e no baralho |
 
 **Migração da versão 1:**
 - Na primeira abertura, as palavras já exportadas pela 1.x viram ✓ No baralho, com a
@@ -393,7 +410,7 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 189 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 219 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 

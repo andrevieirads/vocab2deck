@@ -106,9 +106,12 @@ function Home:build(w, h)
     end
     table.insert(body, Kit.vspan(Kit.dp(12)))
     table.insert(body, Kit.buttonRow(cw + 2 * Kit.PAD, {
+        { text = _("＋ Adicionar cartão"), weight = 1.6, callback = function()
+            require("vocab2deck/capture").manual(self.host)
+        end },
         { text = _("⌕ Buscar"), callback = function() self.host:askSearch(self.app) end },
         { text = _("Campos"), callback = function() self.app:open("vocab2deck/screens/model", {}) end },
-        { text = _("Configurações"), callback = function() self.host:showSettings() end },
+        { text = _("Configurações"), weight = 1.4, callback = function() self.host:showSettings() end },
     }, { size = Kit.SIZE.small }))
     table.insert(body, Kit.vspan(Kit.dp(10)))
     table.insert(body, Kit.buttonRow(cw + 2 * Kit.PAD, {

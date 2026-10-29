@@ -2,7 +2,8 @@
 Editor de campos de um cartão, no estilo da janela "Adicionar" do Anki: os
 campos um embaixo do outro, cada um com o nome, o lado (frente/verso) e o
 texto. Tocar no texto edita; "⋯" abre as opções do campo; "+ Campo" cria um
-campo só deste cartão ou no modelo (todos os cartões).
+campo só deste cartão ou no modelo (todos os cartões); "− Campo" tira um
+campo só deste cartão ou do modelo.
 
 As caixas de campo usam o mesmo desenho do Kit.field do KR2Anki.
 Toda mudança é gravada na hora; se a palavra já está no baralho, o cartão
@@ -136,6 +137,13 @@ function Editor:fieldOptions(f)
     end
     choose(T(_("%1 · campo do modelo (%2)"), f.name, SIDE_LABEL[f.side]), {
         { text = _("Editar o texto"), callback = function() self:editValue(f) end },
+        f.removed and { text = _("Trazer de volta para este cartão"), callback = function()
+            store:setItemSide(self.vkey, f.id, nil)
+            self:changed()
+        end } or { text = _("− Tirar só deste cartão"), callback = function()
+            store:setItemSide(self.vkey, f.id, "none")
+            self:changed()
+        end },
         { text = _("Restaurar o texto gerado"), enabled = f.edited and f.source ~= "none", callback = function()
             store:setOverride(self.vkey, f.id, nil)
             self:changed()
@@ -144,6 +152,47 @@ function Editor:fieldOptions(f)
             self.app:open("vocab2deck/screens/model", {})
         end },
     })
+end
+
+-- "− Campo": campo só deste cartão sai; campo do modelo sai deste cartão ou de todos.
+function Editor:removeField()
+    local store = self.host:getStore()
+    local rows = {}
+    for __, f in ipairs(self.fields) do
+        if f.extra then
+            rows[#rows + 1] = { text = T(_("− %1 (só neste cartão)"), f.name), callback = function()
+                store:removeExtra(f.id)
+                self:changed()
+            end }
+        elseif not f.removed then
+            rows[#rows + 1] = { text = "− " .. f.name, callback = function()
+                choose(T(_("Tirar \"%1\" de onde?"), f.name), {
+                    { text = _("Só deste cartão"), callback = function()
+                        store:setItemSide(self.vkey, f.id, "none")
+                        self:changed()
+                    end },
+                    { text = _("De todos os cartões (modelo)"), callback = function()
+                        local ConfirmBox = require("ui/widget/confirmbox")
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Tirar o campo \"%1\" de todos os cartões? Dá para trazê-lo de volta em Campos ▸ + Campo."), f.name),
+                            ok_text = _("Tirar"),
+                            ok_callback = function()
+                                Safe.run(_("campo"), function()
+                                    self.host:removeModelField(f.id)
+                                    self:changed()
+                                end)
+                            end,
+                        })
+                    end },
+                })
+            end }
+        end
+    end
+    if #rows == 0 then
+        Safe.message(_("Não há campo para tirar."), 2)
+        return
+    end
+    choose(_("Qual campo tirar?"), rows)
 end
 
 function Editor:addField()
@@ -202,7 +251,10 @@ end
 -- Uma caixa de campo: rótulo (nome · lado · ⋯) e o texto com borda.
 function Editor:fieldWidget(f, width)
     local notes = { SIDE_LABEL[f.side] }
-    if f.extra then notes[#notes + 1] = _("só neste cartão") elseif f.edited then notes[#notes + 1] = _("editado") end
+    if f.removed then
+        notes = { _("removido deste cartão (⋯ traz de volta)") }
+    elseif f.extra then notes[#notes + 1] = _("só neste cartão")
+    elseif f.edited then notes[#notes + 1] = _("editado") end
     local label = Kit.text(f.name, Kit.uiBold(Kit.SIZE.small), {}) -- sem :upper(): no Lua ele não muda letras acentuadas
     local note = Kit.text(" · " .. table.concat(notes, " · "), Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK })
     local more = Kit.textButton("⋯", function() self:fieldOptions(f) end, { size = Kit.SIZE.title, height = Kit.dp(40) })
@@ -232,17 +284,19 @@ function Editor:build(w, h)
             Kit.box(w, h - header:getSize().h, Kit.text(_("Esta palavra não existe mais."), Kit.ui(), {})) }
     end
     local buttons = {
+        { text = _("− Campo"), callback = function() self:removeField() end },
         { text = _("+ Campo"), callback = function() self:addField() end },
         { text = _("Pronto"), primary = true, callback = function() self:onClose() end },
     }
     if self.is_new then
         buttons = {
             { text = _("Cancelar"), callback = function() self:discard() end },
-            { text = _("+ Campo"), callback = function() self:addField() end },
-            { text = _("Salvar no Inbox"), primary = true, weight = 1.4, callback = function() self:onClose() end },
+            { text = _("− Campo"), weight = 0.8, callback = function() self:removeField() end },
+            { text = _("+ Campo"), weight = 0.8, callback = function() self:addField() end },
+            { text = _("Salvar no Inbox"), primary = true, weight = 1.5, callback = function() self:onClose() end },
         }
     end
-    local bottom = Kit.bottomBar(w, buttons)
+    local bottom = Kit.bottomBar(w, buttons, { size = Kit.SIZE.small })
     local cw = w - 2 * Kit.PAD
     local avail = h - header:getSize().h - bottom:getSize().h - Kit.PAGER_H
     -- distribui os campos em páginas pela altura real de cada caixa

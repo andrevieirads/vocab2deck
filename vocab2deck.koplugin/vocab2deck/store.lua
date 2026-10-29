@@ -5,12 +5,13 @@ palavra trazida do Vocabulary Builder, como o kr2anki.sqlite3 do KR2Anki.
     items        uma linha por palavra (vkey), com o contexto copiado do
                  Vocabulary Builder, o status e a definição padrão
     item_senses  os sentidos que o dicionário devolveu (para escolher)
-    item_fields  valores editados de campos do modelo (extra = 0) e campos
-                 extras só daquele cartão (extra = 1, com lado próprio)
+    item_fields  valores editados de campos do modelo (extra = 0), campos
+                 extras só daquele cartão (extra = 1, com lado próprio) e
+                 campos do modelo tirados só daquele cartão (extra = 2, side)
 
 Status: inbox (○) → ready (● Revisado) → deck (✓ No baralho); discarded (×).
-Origem (origin): "vocab" (Vocabulary Builder) ou "book" (botão "＋ Adicionar ao
-baralho" no livro).
+Origem (origin): "vocab" (Vocabulary Builder), "book" (botão "＋ Adicionar ao
+baralho" no livro) ou "manual" (botão "＋ Adicionar cartão" no Início).
 
 Mesmo desenho do kr2anki/db.lua: cada operação abre uma conexão curta, e toda
 escrita é uma transação. O Vocabulary Builder nunca é escrito; o banco do
@@ -60,6 +61,12 @@ local SCHEMA = {
         ord   INTEGER NOT NULL DEFAULT 0
     )]],
     [[CREATE INDEX IF NOT EXISTS item_fields_vkey ON item_fields(vkey)]],
+    -- palavras limpas (botão Limpar nos Descartados): a leitura do Vocabulary
+    -- Builder não as traz de volta
+    [[CREATE TABLE IF NOT EXISTS cleared (
+        vkey       TEXT PRIMARY KEY,
+        cleared_at INTEGER
+    )]],
 }
 
 -- Colunas novas, adicionadas no lugar (sem apagar nada), como o Anki Viewer faz.
@@ -185,11 +192,16 @@ function Store:syncFromVocab(words, opts)
             known[r.vkey] = r.status
             origin[r.vkey] = r.origin
         end
+        local cleared = {}
+        for _, r in ipairs(rows(conn, { "vkey" }, "SELECT vkey FROM cleared")) do cleared[r.vkey] = true end
         local res = { added = 0, updated = 0, total = 0 }
         exec(conn, "UPDATE items SET in_vocab = 0")
         for _, w in ipairs(words) do
             local status = known[w.key]
-            if status and origin[w.key] == "book" then
+            if cleared[w.key] and not status then
+                -- limpa por você: fica de fora
+                res.skipped_cleared = (res.skipped_cleared or 0) + 1
+            elseif status and origin[w.key] ~= "vocab" then
                 -- capturado no livro: mantém a frase e o livro da captura
                 exec(conn, "UPDATE items SET streak = ?, in_vocab = 1 WHERE vkey = ?", w.streak, w.key)
                 res.updated = res.updated + 1
@@ -218,7 +230,7 @@ end
 --[[--
 Item vindo do livro (botão "＋ Adicionar ao baralho"). Se o texto já existe
 (ex.: a palavra veio do Vocabulary Builder), não duplica.
-@param c { word, prev, next, highlight, book }
+@param c { word, prev, next, highlight, book, origin ("book" | "manual") }
 @treturn string vkey, boolean created
 --]]
 function Store:addCapture(c)
@@ -228,10 +240,29 @@ function Store:addCapture(c)
     return self:_tx(function(conn)
         local exists = rows(conn, { "vkey" }, "SELECT vkey FROM items WHERE vkey = ?", vkey)[1]
         if exists then return vkey, false end
+        -- adicionada de novo pelo livro: deixa de contar como limpa
+        exec(conn, "DELETE FROM cleared WHERE vkey = ?", vkey)
         exec(conn, "INSERT INTO items (vkey, word, book, prev, next, highlight, created, status, looked_up, "
-            .. "in_vocab, origin, added_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'inbox', 0, 0, 'book', ?, ?)",
-            vkey, c.word, c.book, c.prev, c.next, c.highlight, now, now, now)
+            .. "in_vocab, origin, added_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'inbox', 0, 0, ?, ?, ?)",
+            vkey, c.word, c.book, c.prev, c.next, c.highlight, now, c.origin or "book", now, now)
         return vkey, true
+    end)
+end
+
+--[[--
+Limpar (botão nos Descartados): tira as palavras do plugin e registra que
+foram limpas, para a leitura do Vocabulary Builder não as trazer de volta.
+O Anki Viewer não é tocado.
+--]]
+function Store:clear(vkeys)
+    local now = self.now()
+    self:_tx(function(conn)
+        for _, k in ipairs(vkeys) do
+            exec(conn, "DELETE FROM item_senses WHERE vkey = ?", k)
+            exec(conn, "DELETE FROM item_fields WHERE vkey = ?", k)
+            exec(conn, "DELETE FROM items WHERE vkey = ?", k)
+            exec(conn, "INSERT OR REPLACE INTO cleared (vkey, cleared_at) VALUES (?, ?)", k, now)
+        end
     end)
 end
 
@@ -318,11 +349,13 @@ local function loadFull(conn, item)
     for _, s in ipairs(rows(conn, { "text" }, "SELECT text FROM item_senses WHERE vkey = ? ORDER BY ord", item.vkey)) do
         item.senses[#item.senses + 1] = s.text
     end
-    item.overrides, item.extras = {}, {}
+    item.overrides, item.extras, item.sides = {}, {}, {}
     for _, f in ipairs(rows(conn, { "id", "field", "value", "side", "extra", "ord" },
             "SELECT id, field, value, side, extra, ord FROM item_fields WHERE vkey = ? ORDER BY ord, id", item.vkey)) do
         if f.extra == 1 then
             item.extras[#item.extras + 1] = { id = f.id, name = f.field, value = f.value or "", side = f.side or "back" }
+        elseif f.extra == 2 then
+            item.sides[f.field] = f.side
         else
             item.overrides[f.field] = f.value or ""
         end
@@ -394,6 +427,20 @@ function Store:setOverride(vkey, field, value)
         exec(conn, "DELETE FROM item_fields WHERE vkey = ? AND field = ? AND extra = 0", vkey, field)
         if value ~= nil then
             exec(conn, "INSERT INTO item_fields (vkey, field, value, extra) VALUES (?, ?, ?, 0)", vkey, field, value)
+        end
+        exec(conn, "UPDATE items SET updated_at = ? WHERE vkey = ?", self.now(), vkey)
+    end)
+end
+
+--[[--
+Lado de um campo do modelo só neste cartão ("none" = tirado deste cartão).
+side == nil volta ao lado do modelo.
+--]]
+function Store:setItemSide(vkey, field, side)
+    self:_tx(function(conn)
+        exec(conn, "DELETE FROM item_fields WHERE vkey = ? AND field = ? AND extra = 2", vkey, field)
+        if side ~= nil then
+            exec(conn, "INSERT INTO item_fields (vkey, field, side, extra) VALUES (?, ?, ?, 2)", vkey, field, side)
         end
         exec(conn, "UPDATE items SET updated_at = ? WHERE vkey = ?", self.now(), vkey)
     end)
