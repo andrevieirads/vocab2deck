@@ -10,7 +10,12 @@ Toda mudança é gravada na hora; se a palavra já está no baralho, o cartão
 do Anki Viewer recebe o texto novo (o progresso de revisão fica).
 
 Modo "Novo cartão" (is_new, aberto pelo botão "＋ Adicionar ao baralho" no
-livro): Cancelar descarta o item; Salvar no Inbox o guarda para o fluxo normal.
+livro ou "＋ Adicionar cartão" no Início): Cancelar descarta o item; Salvar no
+Inbox o guarda para o fluxo normal.
+
+Cartões de "＋ Adicionar cartão" têm o tipo fixo Frente/Verso
+(template.manual): os dois campos não saem nem mudam pelo modelo; dá para
+criar e tirar campos só daquele cartão.
 --]]
 
 local UIManager = require("ui/uimanager")
@@ -69,7 +74,7 @@ end
 function Editor:load()
     self.item = self.host:getStore():get(self.vkey)
     if self.item then
-        self.fields = Tpl.fields(self.item, self.host:model(), self.host.settings:cardOptions())
+        self.fields = Tpl.fields(self.item, self.host:modelFor(self.item), self.host.settings:cardOptions())
     end
 end
 
@@ -88,10 +93,12 @@ local function choose(title, rows)
     local d
     local buttons = {}
     for __, r in ipairs(rows) do
-        buttons[#buttons + 1] = { { text = r.text, enabled = r.enabled, callback = function()
-            UIManager:close(d)
-            if r.callback then Safe.run(_("campo"), r.callback) end
-        end } }
+        if r then -- entradas false são opções que não valem para este cartão
+            buttons[#buttons + 1] = { { text = r.text, enabled = r.enabled, callback = function()
+                UIManager:close(d)
+                if r.callback then Safe.run(_("campo"), r.callback) end
+            end } }
+        end
     end
     buttons[#buttons + 1] = { { text = _("Cancelar"), callback = function() UIManager:close(d) end } }
     d = ButtonDialog:new{ title = title, buttons = buttons }
@@ -135,6 +142,16 @@ function Editor:fieldOptions(f)
         })
         return
     end
+    if Tpl.isManual(self.item) then
+        choose(T(_("%1 · cartão Frente/Verso"), f.name), {
+            { text = _("Editar o texto"), callback = function() self:editValue(f) end },
+            { text = _("Restaurar o texto gerado"), enabled = f.edited, callback = function()
+                store:setOverride(self.vkey, f.id, nil)
+                self:changed()
+            end },
+        })
+        return
+    end
     choose(T(_("%1 · campo do modelo (%2)"), f.name, SIDE_LABEL[f.side]), {
         { text = _("Editar o texto"), callback = function() self:editValue(f) end },
         f.removed and { text = _("Trazer de volta para este cartão"), callback = function()
@@ -164,7 +181,7 @@ function Editor:removeField()
                 store:removeExtra(f.id)
                 self:changed()
             end }
-        elseif not f.removed then
+        elseif not f.removed and not Tpl.isManual(self.item) then
             rows[#rows + 1] = { text = "− " .. f.name, callback = function()
                 choose(T(_("Tirar \"%1\" de onde?"), f.name), {
                     { text = _("Só deste cartão"), callback = function()
@@ -189,7 +206,9 @@ function Editor:removeField()
         end
     end
     if #rows == 0 then
-        Safe.message(_("Não há campo para tirar."), 2)
+        Safe.message(Tpl.isManual(self.item)
+            and _("Este cartão tem só Frente e Verso. Dá para tirar só campos criados nele (+ Campo).")
+            or _("Não há campo para tirar."), 3)
         return
     end
     choose(_("Qual campo tirar?"), rows)
@@ -217,7 +236,7 @@ function Editor:addField()
                 end)
             end, { multiline = false })
         end },
-        { text = _("No modelo (todos os cartões)"), callback = function()
+        not Tpl.isManual(self.item) and { text = _("No modelo (todos os cartões)"), callback = function()
             editText(_("Nome do campo novo"), "", function(name)
                 if not name:match("%S") then return end
                 askSide(function(side)

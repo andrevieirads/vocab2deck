@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.5
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.6
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -133,8 +133,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
 - Linha de ações: **＋ Adicionar cartão** · ⌕ Buscar · Campos · Configurações.
   - *＋ Adicionar cartão* pede a frente (uma palavra ou um trecho) e abre o editor de
-    **Novo cartão**, o mesmo do destaque: a definição vem do dicionário quando o texto tem
-    até 4 palavras, e o título do livro vem quando há um aberto.
+    **Novo cartão** com um **tipo próprio, só com Frente e Verso**:
+    - **Frente** é o texto digitado.
+    - **Verso** começa com a definição do dicionário (quando o texto tem até 4 palavras) e
+      é editável.
+  - Esse tipo não depende da tela Campos: mudar o modelo não afeta esses cartões.
+  - No editor deles, + Campo e − Campo valem só para campos criados naquele cartão.
   - *Salvar no Inbox* guarda o cartão; *Cancelar* descarta.
 - *Estudar no Anki Viewer* · **Sincronizar (N)**: manda de novo os itens ✓ No baralho.
   - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
@@ -193,7 +197,8 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - Se a palavra já está no baralho, cada mudança atualiza o cartão na hora, sem mexer no
   progresso.
 
-**Modelo de campos** (o "tipo de nota"):
+**Modelo de campos** (o "tipo de nota" das palavras do Vocabulary Builder e do livro; os
+cartões de *＋ Adicionar cartão* têm o tipo fixo Frente/Verso):
 - Padrão: Palavra (F) · Frase (F) · Definição (V) · Livro (V) · Notas (V).
 - Tocar num campo abre: ✎ Renomear, Frente / Verso / Não mostrar, ↑ Subir / ↓ Descer e
   − Remover este campo. Vale para **qualquer** campo, inclusive Palavra, Frase, Definição e
@@ -410,7 +415,7 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 219 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 223 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 

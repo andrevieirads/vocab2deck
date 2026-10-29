@@ -153,7 +153,7 @@ end
 -- ✎ da palavra: buscar outra forma (forma base) ou editar o texto no cartão.
 function Review:wordActions()
     local it = self.item
-    local model = self.host:model()
+    local model = self.host:modelFor(self.item)
     local wf = fieldBySource(model, "word")
     dialog(it.word, {
         { text = _("Buscar outra forma no dicionário"), callback = function()
@@ -183,7 +183,7 @@ end
 -- Toque na frase: encurtar, mais contexto, original, editar.
 function Review:sentenceActions()
     local it = self.item
-    local sf = fieldBySource(self.host:model(), "sentence")
+    local sf = fieldBySource(self.host:modelFor(self.item), "sentence")
     if not sf then return end
     local function set(opts)
         return function()
@@ -203,7 +203,7 @@ function Review:sentenceActions()
             self:changed()
         end },
         { text = _("Editar o texto"), callback = function()
-            local fields = Tpl.fields(it, self.host:model(), self.host.settings:cardOptions())
+            local fields = Tpl.fields(it, self.host:modelFor(self.item), self.host.settings:cardOptions())
             local value = ""
             for __, f in ipairs(fields) do if f.id == sf.id then value = f.value end end
             self:input(sf.name, value, function(v)
@@ -216,7 +216,7 @@ end
 
 function Review:chooseSense(i)
     local it = self.item
-    local df = fieldBySource(self.host:model(), "definition")
+    local df = fieldBySource(self.host:modelFor(self.item), "definition")
     if not df then return end
     Safe.run(_("escolher sentido"), function()
         self:store():setOverride(it.vkey, df.id, i and it.senses[i] or nil)
@@ -269,7 +269,7 @@ end
 
 function Review:sentenceBlock(cw, max_lines)
     local it = self.item
-    local sf = fieldBySource(self.host:model(), "sentence")
+    local sf = fieldBySource(self.host:modelFor(self.item), "sentence")
     local inner_w = cw - 2 * (Kit.dp(1.5) + Kit.dp(14))
     local text, edited
     if sf and it.overrides[sf.id] then
@@ -301,7 +301,7 @@ end
 -- Escrever a definição à mão (vale no lugar da do dicionário).
 function Review:editDefinition()
     local it = self.item
-    local df = fieldBySource(self.host:model(), "definition")
+    local df = fieldBySource(self.host:modelFor(self.item), "definition")
     if not df then return end
     local current = it.overrides[df.id] or Tpl.defaultDefinition(it, self.host.settings:cardOptions().max_senses)
     self:input(df.name, current, function(v)
@@ -314,7 +314,7 @@ end
 -- dicionário, quantos couberem (até MAX_SENSES); e "Ver a entrada inteira".
 function Review:sensesBlock(cw, avail)
     local it = self.item
-    local df = fieldBySource(self.host:model(), "definition")
+    local df = fieldBySource(self.host:modelFor(self.item), "definition")
     local g = VerticalGroup:new{ align = "left" }
     local label = Kit.sectionLabel(_("Escolha o sentido"), cw,
         it.dict and Kit.text(T(_("%1 sentidos"), #it.senses), Kit.ui(Kit.SIZE.tiny), { fgcolor = Kit.GREY_DARK }) or nil)
@@ -381,7 +381,7 @@ end
 
 function Review:fieldsButton(cw)
     local it = self.item
-    local n = #self.host:model() + #it.extras
+    local n = #self.host:modelFor(self.item) + #it.extras
     return Kit.button{
         text = T(_("✎ Campos do cartão (%1) · pré-visualizar"), n), width = cw,
         callback = function() self.app:open("vocab2deck/screens/editor", { vkey = it.vkey }) end,

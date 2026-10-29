@@ -235,10 +235,10 @@ function Items:build(w, h)
     self.page = math.max(1, math.min(self.page or 1, self.pages))
     local list = VerticalGroup:new{ align = "left" }
     local store = self.host:getStore()
-    local model, opts = self.host:model(), self.host.settings:cardOptions()
+    local model, opts = self.host:modelResolver(), self.host.settings:cardOptions()
     for __, r in ipairs(store:query(self.filter, self.sort, (self.page - 1) * per_page, per_page)) do
         local item = store:get(r.vkey)
-        r.back_preview = item and Tpl.backPreview(Tpl.fields(item, model, opts)) or nil
+        r.back_preview = item and Tpl.backPreview(Tpl.fields(item, model(item), opts)) or nil
         table.insert(list, self:rowWidget(r, cw))
         table.insert(list, Kit.hline(cw, Kit.dp(1), Kit.GREY_LIGHT))
     end

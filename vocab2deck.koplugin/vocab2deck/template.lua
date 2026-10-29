@@ -37,6 +37,25 @@ function T.defaults()
     }
 end
 
+--[[--
+Tipo fixo dos cartões criados em "＋ Adicionar cartão": só Frente e Verso.
+Os ids reaproveitam "word" e "definition": a frente é o texto digitado e o
+verso começa com a definição do dicionário (quando houver) e é editável. Não
+muda com a tela Campos.
+--]]
+T.MANUAL_ORIGIN = "manual"
+function T.manual()
+    return {
+        { id = "word", name = "Frente", side = "front", source = "word" },
+        { id = "definition", name = "Verso", side = "back", source = "definition" },
+    }
+end
+
+-- O cartão usa o tipo fixo Frente/Verso (criado em "＋ Adicionar cartão")?
+function T.isManual(item)
+    return item ~= nil and item.origin == T.MANUAL_ORIGIN
+end
+
 local function copy(list)
     local out = {}
     for i, f in ipairs(list) do out[i] = { id = f.id, name = f.name, side = f.side, source = f.source } end
