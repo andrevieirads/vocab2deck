@@ -70,6 +70,24 @@ function M.install(opts)
         clear = function() end,
     })
 
+    -- Histórico de livros e metadados (.sdr) para os destaques: os testes
+    -- preenchem M.history (arquivos) e M.sidecars[arquivo] = { annotations, doc_props, highlight }.
+    M.history, M.sidecars = {}, {}
+    preload("readhistory", setmetatable({}, { __index = function(_, k)
+        if k == "hist" then
+            local out = {}
+            for i, f in ipairs(M.history) do out[i] = { file = f } end
+            return out
+        end
+    end }))
+    preload("docsettings", {
+        hasSidecarFile = function(_, f) return M.sidecars[f] and (f .. ".sdr") or nil end,
+        open = function(_, f)
+            local d = M.sidecars[f] or {}
+            return { readSetting = function(_, k) return d[k] end }
+        end,
+    })
+
     -- Menu (usado nas configurações e na lista de alterações): guarda os itens.
     local Widget = require("ui/widget/widget")
     local Menu = Widget:extend{ __kind = "menu" }
@@ -150,6 +168,7 @@ end
 
 function M.reset()
     M.trapper_infos = {}
+    M.history, M.sidecars = {}, {}
     M.trapper_abort_at = nil
 end
 

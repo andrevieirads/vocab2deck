@@ -1,6 +1,7 @@
 -- Copiado do KR2Anki (kr2anki.koplugin/kr2anki/ui/kit.lua). Alterações: require("kr2anki/...")
 -- -> require("vocab2deck/..."), textos visíveis em português, nome da tela e (kit) os status
--- deste plugin (Inbox, Revisado, No baralho, Descartado).
+-- deste plugin (Inbox, Revisado, No baralho, Descartado); serifa itálica, ícones desenhados
+-- (Kit.icon) e Kit.badge, usados no Início.
 -- Créditos: autores do KR2Anki.
 
 --[[--
@@ -33,6 +34,7 @@ local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Widget = require("ui/widget/widget")
 local Screen = Device.screen
 
 local Kit = {}
@@ -79,6 +81,7 @@ end
 function Kit.ui(size) return face("cfont", size or Kit.SIZE.body) end
 function Kit.uiBold(size) return face("smallinfofontbold", size or Kit.SIZE.body) end
 function Kit.serif(size) return face("NotoSerif-Regular.ttf", size or Kit.SIZE.sentence) end
+function Kit.serifItalic(size) return face("NotoSerif-Italic.ttf", size or Kit.SIZE.sentence) end
 
 function Kit.lineHeight(f, line_height_em)
     return math.floor((1 + (line_height_em or 0.3)) * f.size + 0.5)
@@ -579,6 +582,96 @@ function Kit.pager(opts)
             allow_mirroring = false,
             mid, bw, fw,
         },
+    }
+end
+
+-- Icons (adição do vocab2deck) -----------------------------------------------------
+-- Desenhados com retângulos (bb:paintRect), sem depender de a fonte do aparelho ter
+-- os símbolos. Cada ícone é uma lista de traços em coordenadas 0..1 do quadrado.
+
+local function arc(cx, cy, r, a0, a1, n)
+    local pts = {}
+    for i = 0, n do
+        local a = math.rad(a0 + (a1 - a0) * i / n)
+        pts[#pts + 1] = { cx + r * math.cos(a), cy + r * math.sin(a) }
+    end
+    return pts
+end
+
+-- traços: { linha = {{x,y},…} } e pontos cheios { dot = {x, y, r} }
+local ICON_SHAPES = {
+    plus = { { { 0.5, 0.05 }, { 0.5, 0.95 } }, { { 0.05, 0.5 }, { 0.95, 0.5 } } },
+    search = { arc(0.42, 0.42, 0.33, 0, 360, 28), { { 0.66, 0.66 }, { 0.95, 0.95 } } },
+    sync = {
+        arc(0.5, 0.5, 0.4, 200, 340, 14), { { 0.88, 0.2 }, { 0.88, 0.37 }, { 0.71, 0.37 } },
+        arc(0.5, 0.5, 0.4, 20, 160, 14), { { 0.12, 0.8 }, { 0.12, 0.63 }, { 0.29, 0.63 } },
+    },
+    import = { { { 0.5, 0.02 }, { 0.5, 0.72 } }, { { 0.2, 0.44 }, { 0.5, 0.74 }, { 0.8, 0.44 } },
+               { { 0.05, 0.95 }, { 0.95, 0.95 } } },
+    chevron_right = { { { 0.3, 0.08 }, { 0.72, 0.5 }, { 0.3, 0.92 } } },
+    chevron_left = { { { 0.7, 0.08 }, { 0.28, 0.5 }, { 0.7, 0.92 } } },
+    menu = { { dot = { 0.5, 0.15, 0.11 } }, { dot = { 0.5, 0.5, 0.11 } }, { dot = { 0.5, 0.85, 0.11 } } },
+}
+
+local function iconRects(kind, size, stroke)
+    local rects, seen = {}, {}
+    local function put(x, y, w, h)
+        local key = x .. ":" .. y .. ":" .. w .. ":" .. h
+        if not seen[key] then seen[key] = true; rects[#rects + 1] = { x, y, w, h } end
+    end
+    local span = size - stroke
+    for _, shape in ipairs(ICON_SHAPES[kind] or {}) do
+        if shape.dot then
+            local cx, cy, r = shape.dot[1] * size, shape.dot[2] * size, math.max(1, shape.dot[3] * size)
+            for dy = -math.floor(r), math.floor(r) do
+                local half = math.floor(math.sqrt(r * r - dy * dy) + 0.5)
+                put(math.floor(cx - half + 0.5), math.floor(cy + dy + 0.5), 2 * half + 1, 1)
+            end
+        else
+            for i = 1, #shape - 1 do
+                local x0, y0 = shape[i][1] * span, shape[i][2] * span
+                local x1, y1 = shape[i + 1][1] * span, shape[i + 1][2] * span
+                local n = math.max(1, math.ceil(math.max(math.abs(x1 - x0), math.abs(y1 - y0))))
+                for k = 0, n do
+                    put(math.floor(x0 + (x1 - x0) * k / n + 0.5), math.floor(y0 + (y1 - y0) * k / n + 0.5), stroke, stroke)
+                end
+            end
+        end
+    end
+    return rects
+end
+
+local KitIcon = Widget:extend{ kind = "plus", size = 24, stroke = 2 }
+function KitIcon:init()
+    self._shape = iconRects(self.kind, self.size, self.stroke)
+end
+function KitIcon:getSize() return Geom:new{ w = self.size, h = self.size } end
+function KitIcon:paintTo(bb, x, y)
+    self.dimen = Geom:new{ x = x, y = y, w = self.size, h = self.size }
+    self._rects = {}
+    for i, r in ipairs(self._shape) do self._rects[i] = { x + r[1], y + r[2], r[3], r[4] } end
+    if bb then
+        for _, r in ipairs(self._rects) do bb:paintRect(r[1], r[2], r[3], r[4], self.color) end
+    end
+end
+
+-- kind: plus | search | sync | import | chevron_right | chevron_left | menu
+function Kit.icon(kind, size, opts)
+    opts = opts or {}
+    size = size or Kit.dp(24)
+    return KitIcon:new{ kind = kind, size = size, stroke = opts.stroke or math.max(2, math.floor(size / 11)),
+                        color = opts.color or Kit.BLACK }
+end
+
+-- Número branco num círculo preto (cartões para estudar).
+function Kit.badge(n, size)
+    local text = Kit.text(tostring(n), Kit.uiBold(size or Kit.SIZE.small), { fgcolor = Kit.WHITE })
+    local tw = text:getSize()
+    local d = math.max(tw.h, tw.w + Kit.dp(10))
+    return FrameContainer:new{
+        bordersize = 0, padding = 0, margin = 0, radius = math.floor(d / 2),
+        background = Kit.BLACK,
+        Kit.box(d, math.max(tw.h, d), text),
     }
 end
 

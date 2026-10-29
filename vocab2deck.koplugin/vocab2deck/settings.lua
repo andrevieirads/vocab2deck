@@ -14,6 +14,8 @@ Settings.DEFAULTS = {
     include_book = true,               -- (versão 1; hoje vira o lado do campo Livro no modelo)
     direction = "forward",             -- "forward" (palavra → definição) | "both" (os dois sentidos)
     only_unlearned = false,            -- exportar só palavras ainda não aprendidas
+    import_highlights = true,          -- Sincronizar traz também os destaques dos livros
+    apkg_dir = nil,                    -- pasta do Vocab2Deck.apkg; nil = <dados>/ankiviewer/shared
     learned_streak = 5,                -- acertos seguidos (streak_count) para contar como aprendida
     auto_export = false,               -- abrir já exportando os Revisados
     on_change = "update",              -- texto de cartão no baralho mudou: "update" (sozinho) | "ask" | "ignore"

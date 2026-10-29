@@ -80,6 +80,11 @@ local function findOnPages(text)
     end
     return has(text)
 end
+-- ⋮ do Início: abre o menu e escolhe um item (Campos, Importar, Configurações)
+local function homeMenu(label)
+    UIM:top():showMenu()
+    pressDialogButton(LAST_buttondialog, label)
+end
 -- toca na última ocorrência de um texto na tela
 local function tapLast(pattern)
     local n = 0
@@ -247,13 +252,19 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     S.p:onVocab2DeckOpen()
     check(has("Inbox") and has("Revisados") and has("No baralho"), "status no Início: " .. screenText())
     check(has("3 palavras novas vieram do Vocabulary Builder"), "aviso das palavras novas")
-    -- ordem dos botões: Buscar · Sincronizar · Configurações / Adicionar · Campos · Estudar / Revisar · Exportar
-    local order, want = {}, { "⌕ Buscar", "Sincronizar (0)", "Configurações", "＋ Adicionar", "Campos", "Estudar",
-                              "Revisar (3)", "Exportar (0)" }
+    -- ordem do Início: hoje · funil · Revisar / Exportar · baralhos · barra de baixo
+    local order, want = {}, { "VOCABULÁRIO", "Flashcards", "PARA ESTUDAR HOJE", "Estudar agora", "DO KINDLE PARA O ANKI",
+                              "Vocabulário", "Destaques", "Inbox", "Revisados", "No baralho", "Descartados", "Revisar (3)", "Exportar (0)",
+                              "BARALHOS", "Adicionar", "Buscar", "Sincronizar", "Importar" }
     local set = {}
     for _, w in ipairs(want) do set[w] = true end
     for _, t in ipairs(texts()) do if set[t] then order[#order + 1] = t end end
-    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem dos botões do Início")
+    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem do Início")
+    -- ⋮ : Campos · Importar · Configurações
+    UIM:top():showMenu()
+    local menu_items = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    eq(menu_items, "Campos | Importar | Configurações | Fechar", "menu ⋮")
+    pressDialogButton(LAST_buttondialog, "Fechar")
     eq(S.dict.lookups, 0, "abrir não busca no dicionário")
     noOffscreen("início")
     snap("1_inicio")
@@ -365,7 +376,7 @@ scenario("modelo: novo campo para todos e ocultar Livro → atualizar sem perder
     local id = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:quixotic'"))
     local before = sched(data, id)
     p:onVocab2DeckOpen()
-    tapText("^Campos$")
+    homeMenu("Campos")
     check(has("Palavra") and has("Definição") and not has("Repetir a frente no verso"), "modelo: " .. screenText())
     noOffscreen("modelo")
     snap("8_modelo")
@@ -629,7 +640,7 @@ local function checkApkg(path)
     return r, notes
 end
 
-scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro", function()
+scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::<baralho>", function()
     local data = freshEnv()
     makeVocab(data, {
         { word = "serendipity", book = "Livro A", prev = "It was pure ", next = " that we met." },
@@ -637,6 +648,7 @@ scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro",
         { word = "ephemeral", prev = "The joy was ", next = " and fleeting." }, -- sem livro
     })
     local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p.settings:set("subdeck_per_book", true) -- um baralho por livro no Anki Viewer; sem livro, o padrão
     p:onVocab2DeckOpen()
     p:getStore():setStatus({ "w:serendipity", "w:quixotic", "w:ephemeral" }, "ready")
     UIM.stack = {}
@@ -651,7 +663,7 @@ scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro",
     eq(r.revlog_query, "ok", "a consulta do Anki na revlog funciona: " .. r.raw)
     check(contains(r.revlog_cols, "ease"), "revlog tem a coluna ease")
     eq(r.ver, "11", "coleção legada (schema 11)")
-    eq(r.decks, "Default|Vocab2Deck|Vocab2Deck::Livro A|Vocab2Deck::Livro B", "hierarquia de baralhos")
+    eq(r.decks, "Default|Vocab2Deck|Vocab2Deck::Livro A|Vocab2Deck::Livro B|Vocab2Deck::Vocabulary Builder", "hierarquia de baralhos")
     eq(r.notes, "3", "uma nota por cartão")
     eq(r.cards_in_known_decks, "True", "cartões nos baralhos do pacote")
     eq(r.csum_ok, "True", "checksum das notas")
@@ -664,7 +676,7 @@ scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro",
     end
     eq(by_word.serendipity and by_word.serendipity.deck, "Vocab2Deck::Livro A", "serendipity no subbaralho do livro")
     eq(by_word.quixotic and by_word.quixotic.deck, "Vocab2Deck::Livro B", "quixotic no subbaralho do livro")
-    eq(by_word.ephemeral and by_word.ephemeral.deck, "Vocab2Deck", "sem livro: no baralho principal")
+    eq(by_word.ephemeral and by_word.ephemeral.deck, "Vocab2Deck::Vocabulary Builder", "sem livro: no baralho das configurações")
     local sb = by_word.serendipity.back
     check(contains(sb, "luck") and not contains(sb, "――――――") and not contains(sb, "serendipity"),
         "verso no Anki não repete a frente: " .. sb)
@@ -766,13 +778,121 @@ scenario("Sincronizar com o Anki Viewer: recria, atualiza e move sem mexer no ag
     p:onVocab2DeckOpen()
     snap("11_inicio_sincronizar")
     noOffscreen("início com sincronizar")
-    tapText("^Sincronizar %(3%)")
+    local badge = false
+    for _, t in ipairs(texts()) do if t == "3" then badge = true end end
+    check(badge, "bolinha com os 3 do baralho no Sincronizar")
+    tapText("^Sincronizar$")
     check(contains(info(), "1 cartões que faltavam foram criados") and contains(info(), "agendamento"), "aviso: " .. tostring(info()))
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "o apagado voltou, sem duplicar")
     check(contains(scalar(data, "SELECT back FROM cards WHERE id = " .. qid), "exceedingly idealistic"), "texto refeito pelo plugin")
     eq(sched(data, qid), before, "agendamento intacto")
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards c JOIN decks d ON d.id = c.deck_id WHERE d.name = 'Meu Vocabulário'")), 3, "todos no baralho novo")
     eq(checkApkg(data .. "/ankiviewer/shared/Vocab2Deck.apkg").notes, "3", "pacote regravado")
+end)
+
+scenario("Sincronizar: Vocabulary Builder e destaques dos livros vão para o Inbox; seis caixas", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local A, B, C = "/mnt/us/books/Hamlet.epub", "/mnt/us/books/Velho.mobi", "/mnt/us/books/Sem destaques.epub"
+    Stubs.history = { A, B, C }
+    Stubs.sidecars[A] = {
+        doc_props = { title = "Hamlet" },
+        annotations = {
+            { drawer = "lighten", text = "To be,  or not to be,\nthat is the question", note = "Hamlet, ato 3",
+              datetime = "2024-03-01 10:00:00" },
+            { text = "marcador da página 3", datetime = "2024-03-01 10:01:00" }, -- marcador: fica de fora
+            { drawer = "underscore", text = "serendipity", datetime = "2024-03-02 10:00:00" },
+        },
+    }
+    -- formato antigo (por página), sem doc_props: título pelo nome do arquivo
+    Stubs.sidecars[B] = { highlight = { [12] = { { text = "quixotic dreamer", datetime = "2023-01-01 00:00:00" } } } }
+    Stubs.sidecars[C] = { annotations = {} }
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:onVocab2DeckOpen()
+    eq(p:getStore():sourceCounts().vocab, 3, "Vocabulário: as 3 do Vocabulary Builder")
+    eq(p:getStore():sourceCounts().highlights, 0, "destaques só chegam pelo Sincronizar")
+    check(has("Vocabulário") and has("Destaques") and has("Descartados"), "seis caixas: " .. screenText())
+    tapText("^Sincronizar$")
+    check(contains(info(), "Vocabulary Builder: 3 palavras, 0 novas no Inbox"), "aviso do Vocabulary Builder: " .. tostring(info()))
+    check(contains(info(), "Destaques: 3 em 2 livros, 2 novos no Inbox"), "aviso dos destaques: " .. tostring(info()))
+    check(not contains(info(), "no baralho sincronizadas"), "sem No baralho, o Anki Viewer não é tocado")
+    UIM:close(LAST_infomessage)
+    local st = p:getStore()
+    eq(st:counts().inbox, 5, "3 palavras + 2 destaques no Inbox")
+    eq(st:sourceCounts().highlights, 3, "serendipity é palavra e destaque")
+    local ham = st:get("w:to be, or not to be, that is the question")
+    check(ham ~= nil, "destaque com espaços e quebra de linha limpos")
+    eq(ham and ham.book, "Hamlet", "livro do destaque")
+    eq(ham and ham.definition, "Hamlet, ato 3", "a nota vira a definição")
+    eq(ham and ham.looked_up, 1, "trecho com nota não vai ao dicionário")
+    local old = st:get("w:quixotic dreamer")
+    eq(old and old.book, "Velho", "título pelo nome do arquivo")
+    eq(old and old.looked_up, 0, "trecho curto ainda passa pelo dicionário")
+    eq(st:get("w:serendipity").origin, "vocab", "palavra que já existia não muda de origem")
+    check(has("2 destaques novos vieram dos livros"), "aviso no Início: " .. screenText())
+    noOffscreen("início com seis caixas")
+    snap("16_inicio_seis_caixas")
+
+    tapText("^Destaques$")
+    eq(UIM:top().total, 3, "lista dos destaques")
+    check(has("quixotic dreamer"), "destaque na lista: " .. screenText())
+    UIM:top():onClose()
+    -- Vocabulário: abre o Vocabulary Builder original do KOReader
+    local depth = #UIM.stack
+    tapText("^Vocabulário$")
+    check(contains(info(), "não está ativo"), "sem o plugin do Vocabulary Builder: aviso: " .. tostring(info()))
+    UIM:close(LAST_infomessage)
+    local vb = { shown = 0 }
+    function vb:onShowVocabBuilder() self.shown = self.shown + 1 end
+    p.ui.vocabulary_builder = vb
+    _G.LAST_infomessage = nil
+    tapText("^Vocabulário$")
+    eq(vb.shown, 1, "Vocabulário abre o Vocabulary Builder")
+    eq(#UIM.stack, depth, "o Início fica embaixo, sem lista do plugin")
+    p.ui.vocabulary_builder = nil
+    -- sem o objeto do plugin: pelo evento da ação de gesto
+    local events = {}
+    p.ui.handleEvent = function(_, ev) events[#events + 1] = ev.name or ev.handler; return true end
+    tapText("^Vocabulário$")
+    check(#events == 1 and tostring(events[1]):find("ShowVocabBuilder"), "evento ShowVocabBuilder: " .. tostring(events[1]))
+    check(info() == nil, "sem aviso quando abre")
+    p.ui.handleEvent = nil
+
+    -- de novo: nada duplica; destaque apagado no livro sai da caixa, mas o item fica
+    table.remove(Stubs.sidecars[A].annotations, 3)
+    tapText("^Sincronizar$")
+    check(contains(info(), "Destaques: 2 em 2 livros, 0 novos no Inbox"), "segunda vez: " .. tostring(info()))
+    UIM:close(LAST_infomessage)
+    eq(st:counts().inbox, 5, "nada duplicado")
+    eq(st:sourceCounts().highlights, 2, "serendipity não é mais destaque")
+    -- limpo nos Descartados não volta
+    st:setStatus({ "w:quixotic dreamer" }, "discarded")
+    st:clear({ "w:quixotic dreamer" })
+    tapText("^Sincronizar$")
+    UIM:close(LAST_infomessage)
+    eq(st:get("w:quixotic dreamer"), nil, "limpo não volta pelos destaques")
+    -- desligado nas configurações
+    p.settings:set("import_highlights", false)
+    Stubs.sidecars[B].highlight[13] = { { text = "outro trecho", datetime = "2023-01-02 00:00:00" } }
+    tapText("^Sincronizar$")
+    check(not contains(info(), "Destaques:"), "desligado: " .. tostring(info()))
+    eq(st:get("w:outro trecho"), nil, "desligado: nada vem dos livros")
+end)
+
+scenario("destaques do livro aberto: os da memória valem mais que o .sdr", function()
+    freshEnv()
+    local file = "/mnt/us/books/Dom Quixote.epub"
+    Stubs.history = { file }
+    Stubs.sidecars[file] = { annotations = { { drawer = "lighten", text = "velho", datetime = "2024-01-01 00:00:00" } } }
+    local reader = fakeReader()
+    reader.annotation = { annotations = {
+        { drawer = "lighten", text = "velho", datetime = "2024-01-01 00:00:00" },
+        { drawer = "lighten", text = "ainda não gravado", datetime = "2024-01-02 00:00:00" },
+    } }
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    local res = p:syncHighlights()
+    eq(res.added, 2, "os dois da memória")
+    eq(p:getStore():get("w:ainda não gravado").book, "Dom Quixote", "título do livro aberto")
 end)
 
 scenario("destaque com só Notas no verso: lista mostra o verso e exporta; campos: remover, renomear, re-adicionar", function()
@@ -804,7 +924,7 @@ scenario("destaque com só Notas no verso: lista mostra o verso e exporta; campo
     -- campos: renomear Notas, remover Livro (do plugin) e adicionar de volta
     UIM.stack = {}
     p:onVocab2DeckOpen()
-    tapText("^Campos$")
+    homeMenu("Campos")
     tapText("^Notas$")
     pressDialogButton(LAST_buttondialog, "Renomear")
     LAST_inputdialog._input = "Comentário"
@@ -911,7 +1031,8 @@ scenario("Início: ＋ Adicionar cartão tem tipo próprio só com Frente e Vers
     p:onVocab2DeckOpen()
     noOffscreen("início com adicionar cartão")
     snap("13_inicio_adicionar")
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
+    pressDialogButton(LAST_buttondialog, "Adicionar cartão")
     LAST_inputdialog._input = "carpe diem"
     pressDialogButton(LAST_inputdialog, "Salvar")
     local exact = {}
@@ -978,7 +1099,8 @@ scenario("Adicionar cartão com frase: o verso não copia a frente", function()
     -- um dicionário que devolve o próprio texto como "definição"
     local p = newPlugin(fakeDict({ ["tempus fugit"] = "tempus fugit" }), fakeAV(), fakeReader())
     p:onVocab2DeckOpen()
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
+    pressDialogButton(LAST_buttondialog, "Adicionar cartão")
     LAST_inputdialog._input = "O tempo passa depressa quando a gente lê"
     pressDialogButton(LAST_inputdialog, "Salvar")
     check(has("O tempo passa depressa quando a gente lê") and has("Toque para preencher"), "verso vazio no editor: " .. screenText())
@@ -998,7 +1120,8 @@ scenario("Adicionar cartão com frase: o verso não copia a frente", function()
     -- dicionário que ecoa o texto: o verso fica vazio
     UIM.stack = {}
     p:onVocab2DeckOpen()
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
+    pressDialogButton(LAST_buttondialog, "Adicionar cartão")
     LAST_inputdialog._input = "tempus fugit"
     pressDialogButton(LAST_inputdialog, "Salvar")
     check(has("Toque para preencher"), "verso não preenchido com a frente: " .. screenText())
@@ -1179,7 +1302,7 @@ scenario("Início: lista de baralhos, Importar e opções", function()
     UIM.stack = {}
     p:onVocab2DeckOpen()
     check(has("BARALHOS") and has("Livro A") and has("Livro B"), "baralhos no Início: " .. screenText())
-    check(has("2 para estudar · 2 cartões"), "contagem do baralho")
+    check(has("2 cartões") and has("1 cartão"), "contagem do baralho")
     noOffscreen("início com baralhos")
     snap("15_inicio_baralhos")
     local id_b = tonumber(scalar(data, "SELECT id FROM decks WHERE name = 'Livro B'"))
@@ -1208,6 +1331,235 @@ scenario("Início: lista de baralhos, Importar e opções", function()
     LAST_menu:onMenuHold(LAST_menu.item_table[3])
     pressDialogButton(LAST_buttondialog, "Mapeamento de campos")
     eq(p.viewer.mappings, 1, "mapeamento de campos de um baralho importado")
+end)
+
+local function deckNames(data)
+    local conn = SQ3.open(avDbPath(data))
+    local names = {}
+    local stmt = conn:prepare("SELECT name FROM decks ORDER BY name")
+    local row = stmt:step()
+    while row do names[#names + 1] = row[1]; row = stmt:step() end
+    stmt:close()
+    conn:close()
+    return table.concat(names, "|")
+end
+local function cardDeck(data, vkey)
+    return scalar(data, "SELECT d.name FROM cards c JOIN decks d ON d.id = c.deck_id WHERE c.source_key = 'vocab2deck:f:" .. vkey .. "'")
+end
+local function cardId(data, vkey)
+    return tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:" .. vkey .. "'"))
+end
+local function menuItem(pred)
+    for _, it in ipairs(LAST_menu.item_table) do if pred(it) then return it end end
+end
+
+scenario("nomes de baralho: hierarquia com ::, árvore e renomear", function()
+    local D = require("vocab2deck/decks")
+    eq(D.normalize("  Inglês ::  Verbos  "), "Inglês::Verbos", "limpa o nome")
+    eq(D.normalize(" :: "), nil, "nome vazio")
+    eq(D.parent("A::B::C"), "A::B", "baralho de cima")
+    eq(D.leaf("A::B::C"), "C", "último nível")
+    eq(D.join(nil, "X"), "X", "no topo")
+    eq(D.join("A", "X"), "A::X", "dentro de A")
+    check(D.isWithin("A::B", "A") and D.isWithin("A", "A") and not D.isWithin("AB", "A"), "dentro de")
+    eq(D.renamed("A::B", "A", "Z"), "Z::B", "renomear leva os de dentro")
+    eq(D.renamed("AB", "A", "Z"), nil, "nome parecido não muda")
+    local tree = D.tree({
+        { id = 1, name = "A B", cards = 1, due = 0 },
+        { id = 2, name = "A::B", cards = 2, due = 1 },
+        { id = 3, name = "A", cards = 3, due = 0 },
+        { id = 4, name = "X::Y", cards = 4, due = 2 },
+    })
+    local names = {}
+    for i, d in ipairs(tree) do names[i] = d.name .. "/" .. d.depth end
+    eq(table.concat(names, " "), "A/0 A::B/1 A B/0 X/0 X::Y/1", "ordem em árvore, com o pai que falta")
+    eq(tree[1].total_cards, 5, "pai soma os de dentro")
+    eq(tree[1].children, 1, "sub-baralhos")
+    check(tree[4].ghost and tree[4].total_due == 2, "pai que não existe no banco entra sem id")
+end)
+
+scenario("baralhos: Adicionar baralho, sub-baralho, renomear e mover sem perder progresso", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:syncVocab()
+    p:getStore():setStatus({ "w:serendipity", "w:ephemeral", "w:quixotic" }, "ready")
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(3%)")
+    local sid = cardId(data, "w:serendipity")
+    local conn = SQ3.open(avDbPath(data))
+    conn:exec("UPDATE cards SET ease = 2.7, interval = 9, reps = 4 WHERE id = " .. sid)
+    conn:close()
+    local before = sched(data, sid)
+    local vb_id = scalar(data, "SELECT id FROM decks WHERE name = 'Vocabulary Builder'")
+
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    -- ＋ Adicionar: cartão ou baralho
+    tapText("^Adicionar$")
+    local labels = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    check(contains(labels, "Adicionar cartão") and contains(labels, "Adicionar baralho"), "duas opções: " .. labels)
+    pressDialogButton(LAST_buttondialog, "Adicionar baralho")
+    LAST_inputdialog._input = "  Inglês "
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(deckNames(data), "Inglês|Vocabulary Builder", "baralho novo, vazio")
+    check(contains(info(), "criado"), "aviso: " .. tostring(info()))
+    UIM:close(LAST_infomessage)
+    check(has("Inglês"), "aparece no Início: " .. screenText())
+
+    -- toque longo ▸ Novo sub-baralho
+    holdText("^Inglês$")
+    local opts = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    check(contains(opts, "Novo sub-baralho") and contains(opts, "Renomear") and contains(opts, "Mover para"), "opções: " .. opts)
+    pressDialogButton(LAST_buttondialog, "Novo sub-baralho")
+    LAST_inputdialog._input = "Verbos"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(deckNames(data), "Inglês|Inglês::Verbos|Vocabulary Builder", "sub-baralho")
+    UIM:close(LAST_infomessage)
+    check(has("Verbos") and has("1 sub-baralho"), "sub-baralho com recuo no Início: " .. screenText())
+    noOffscreen("início com sub-baralhos")
+    snap("17_inicio_sub_baralhos")
+
+    -- renomear o baralho das configurações: os cartões ficam (mesmo id, mesmo progresso)
+    holdText("^Vocabulary Builder$")
+    pressDialogButton(LAST_buttondialog, "Renomear")
+    eq(LAST_inputdialog.input, "Vocabulary Builder", "nome atual no campo")
+    LAST_inputdialog._input = "Leituras"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(deckNames(data), "Inglês|Inglês::Verbos|Leituras", "renomeado")
+    eq(scalar(data, "SELECT id FROM decks WHERE name = 'Leituras'"), vb_id, "mesmo baralho")
+    eq(p.settings:get("deck_name"), "Leituras", "configuração segue o nome novo")
+    eq(sched(data, sid), before, "progresso mantido")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(deckNames(data), "Inglês|Inglês::Verbos|Leituras", "reabrir não recria o nome antigo")
+
+    -- mover para dentro de outro (a lista não oferece ele mesmo)
+    holdText("^Leituras$")
+    pressDialogButton(LAST_buttondialog, "Mover para")
+    check(menuItem(function(it) return it.deck == "Leituras" end) == nil, "não oferece ele mesmo")
+    LAST_menu:onMenuChoice(menuItem(function(it) return it.deck == "Inglês" end))
+    eq(deckNames(data), "Inglês|Inglês::Leituras|Inglês::Verbos", "movido para dentro de Inglês")
+    eq(p.settings:get("deck_name"), "Inglês::Leituras", "configuração segue")
+    eq(cardDeck(data, "w:serendipity"), "Inglês::Leituras", "cartões vão junto")
+    eq(sched(data, sid), before, "progresso mantido ao mover")
+    UIM:close(LAST_infomessage)
+    -- e de volta para o topo
+    holdText("^Leituras$")
+    pressDialogButton(LAST_buttondialog, "Mover para")
+    LAST_menu:onMenuChoice(menuItem(function(it) return it.top end))
+    eq(deckNames(data), "Inglês|Inglês::Verbos|Leituras", "de volta ao topo")
+    UIM:close(LAST_infomessage)
+    -- nome que já existe
+    holdText("^Inglês$")
+    pressDialogButton(LAST_buttondialog, "Renomear")
+    LAST_inputdialog._input = "Leituras"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(contains(info(), "Já existe"), "recusa nome repetido: " .. tostring(info()))
+    eq(deckNames(data), "Inglês|Inglês::Verbos|Leituras", "nada mudou")
+    UIM:close(LAST_infomessage)
+
+    -- ✓ No baralho: mostra o baralho e troca em massa
+    tapText("^No baralho$")
+    check(has("Baralho: Leituras"), "baralho de cada cartão: " .. screenText())
+    holdText("^quixotic$")
+    tapText("^serendipity$")
+    noOffscreen("seleção no baralho")
+    snap("19_no_baralho_selecao")
+    tapText("^Baralho…$")
+    LAST_menu:onMenuChoice(menuItem(function(it) return it.deck == "Inglês::Verbos" end))
+    eq(cardDeck(data, "w:serendipity"), "Inglês::Verbos", "serendipity movido")
+    eq(cardDeck(data, "w:quixotic"), "Inglês::Verbos", "quixotic movido")
+    eq(cardDeck(data, "w:ephemeral"), "Leituras", "o outro fica")
+    eq(sched(data, sid), before, "progresso vai junto")
+    eq(cardId(data, "w:serendipity"), sid, "o mesmo cartão (nada duplicado)")
+    eq(p:getStore():get("w:serendipity").deck, "Inglês::Verbos", "baralho guardado no item")
+    UIM:close(LAST_infomessage)
+    check(has("Baralho: Inglês::Verbos"), "lista mostra o novo: " .. screenText())
+    noOffscreen("lista no baralho")
+    snap("18_no_baralho_com_baralho")
+
+    -- um item: "Baralho: … ›" → ＋ Novo baralho
+    tapText("^serendipity$")
+    check(has("Baralho: Inglês::Verbos"), "tela do item mostra o baralho: " .. screenText())
+    noOffscreen("item com baralho")
+    tapText("^Baralho: Inglês::Verbos")
+    LAST_menu:onMenuChoice(menuItem(function(it) return it.new end))
+    LAST_inputdialog._input = "Inglês::Phrasal"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(cardDeck(data, "w:serendipity"), "Inglês::Phrasal", "baralho novo criado e cartão movido")
+    UIM:close(LAST_infomessage)
+    check(has("Baralho: Inglês::Phrasal"), "tela atualizada: " .. screenText())
+
+    -- renomear o de cima: os escolhidos nos itens seguem; reabrir não move de volta
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    holdText("^Inglês$")
+    pressDialogButton(LAST_buttondialog, "Renomear")
+    LAST_inputdialog._input = "English"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    eq(p:getStore():get("w:quixotic").deck, "English::Verbos", "item segue o nome novo")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(deckNames(data), "English|English::Phrasal|English::Verbos|Leituras", "nada voltou ao nome antigo")
+    eq(cardDeck(data, "w:quixotic"), "English::Verbos", "cartão no lugar")
+    eq(sched(data, sid), before, "progresso mantido no fim")
+
+    -- o .apkg espelha a organização
+    p.app:closeAll()
+    local r, notes = checkApkg(data .. "/ankiviewer/shared/Vocab2Deck.apkg")
+    eq(r.decks, "Default|Vocab2Deck|Vocab2Deck::English|Vocab2Deck::English::Phrasal|Vocab2Deck::English::Verbos|Vocab2Deck::Leituras",
+        "baralhos do pacote")
+    eq(r.cards_in_known_decks, "True", "cartões nos baralhos do pacote")
+end)
+
+scenario("baralho por livro: renomear/mover o baralho do livro não volta atrás", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p.settings:set("subdeck_per_book", true)
+    p:syncVocab()
+    p:getStore():setStatus({ "w:serendipity", "w:ephemeral", "w:quixotic" }, "ready")
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(3%)")
+    check(p:createDeck("Ficção") == "Ficção", "criado")
+    check(p:moveDeck("Livro A", "Ficção"), "movido")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(deckNames(data), "Ficção|Ficção::Livro A|Livro B", "Livro A dentro de Ficção, sem recriar")
+    eq(cardDeck(data, "w:ephemeral"), "Ficção::Livro A", "cartões do livro no lugar")
+    eq(p:getStore():get("w:serendipity").deck, "Ficção::Livro A", "itens do livro fixos no nome novo")
+end)
+
+scenario("configurações: pasta do pacote .apkg", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:showSettings()
+    local item = menuItem(function(it) return it.text:find("^Pasta do pacote") end)
+    eq(item.mandatory_func(), "Padrão", "padrão")
+    LAST_menu:onMenuChoice(item)
+    check(contains(LAST_buttondialog.title, "ankiviewer/shared"), "mostra a pasta atual: " .. tostring(LAST_buttondialog.title))
+    pressDialogButton(LAST_buttondialog, "Escolher outra pasta")
+    check(LAST_pathchooser and LAST_pathchooser.show_files == false, "seletor de pastas do KOReader")
+    os.execute("mkdir -p '" .. data .. "/Exportar'")
+    LAST_pathchooser.onConfirm(data .. "/Exportar/")
+    eq(item.mandatory_func(), "Exportar", "pasta nova")
+    eq(p:apkgPath(), data .. "/Exportar/Vocab2Deck.apkg", "caminho do pacote")
+    p:syncVocab()
+    p:getStore():setStatus({ "w:serendipity" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(1%)")
+    check(io.open(data .. "/Exportar/Vocab2Deck.apkg", "rb") ~= nil, "pacote gravado na pasta escolhida")
+    check(has("Pacote para o Anki:") and has("Exportar/Vocab2Deck.apkg"), "resultado diz onde: " .. screenText())
+    check(io.open(data .. "/ankiviewer/shared/Vocab2Deck.apkg", "rb") == nil, "nada na pasta antiga")
+    p:showSettings()
+    item = menuItem(function(it) return it.text:find("^Pasta do pacote") end)
+    LAST_menu:onMenuChoice(item)
+    pressDialogButton(LAST_buttondialog, "Voltar para a padrão")
+    eq(item.mandatory_func(), "Padrão", "de volta ao padrão")
+    eq(p:apkgPath(), data .. "/ankiviewer/shared/Vocab2Deck.apkg", "caminho padrão")
 end)
 
 scenario("configurações: opções de estudo do Anki Viewer", function()

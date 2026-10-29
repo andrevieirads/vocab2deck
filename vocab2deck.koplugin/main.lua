@@ -12,10 +12,12 @@ Entradas
     abrir · revisar o Inbox · exportar · estudar
 
 Fluxo
-  vocab_reader (Vocabulary Builder, só leitura) -> store (Inbox, banco próprio)
+  vocab_reader (Vocabulary Builder, só leitura) + highlight_reader (destaques
+    dos livros, só leitura) -> store (Inbox, banco próprio)
     -> screens/review + screens/editor (revisar, escolher o sentido, editar campos)
     -> screens/export -> sync.plan -> dict_lookup -> deck_writer (backup + transação)
-    -> apkg: ankiviewer/shared/Vocab2Deck.apkg (Vocab2Deck::Livro), para o Anki
+    -> apkg: Vocab2Deck.apkg (Vocab2Deck::<baralho>), na pasta das configurações
+       (padrão ankiviewer/shared), para o Anki
     -> "Estudar" abre a tela de estudo do Anki Viewer embutido no baralho
 
 Reaproveita código do KR2Anki (leitura do Vocabulary Builder, busca no
@@ -41,7 +43,9 @@ local App = require("vocab2deck/ui/app")
 local B = require("vocab2deck/card_builder")
 local Capture = require("vocab2deck/capture")
 local DeckWriter = require("vocab2deck/deck_writer")
+local Decks = require("vocab2deck/decks")
 local DictLookup = require("vocab2deck/dict_lookup")
+local HighlightReader = require("vocab2deck/highlight_reader")
 local Safe = require("vocab2deck/safe")
 local Settings = require("vocab2deck/settings")
 local Store = require("vocab2deck/store")
@@ -219,8 +223,19 @@ function Vocab2Deck:getApp()
     return self.app
 end
 
+-- Pasta do pacote .apkg: a escolhida nas configurações ou ankiviewer/shared.
+function Vocab2Deck:defaultApkgDir()
+    return DataStorage:getDataDir() .. "/ankiviewer/shared"
+end
+
+function Vocab2Deck:apkgDir()
+    local dir = self.settings:get("apkg_dir")
+    if type(dir) == "string" and dir:match("%S") then return (dir:gsub("/+$", "")) end
+    return self:defaultApkgDir()
+end
+
 function Vocab2Deck:apkgPath()
-    return DataStorage:getDataDir() .. "/ankiviewer/shared/" .. Apkg.FILE
+    return self:apkgDir() .. "/" .. Apkg.FILE
 end
 
 -- Ao fechar o plugin: grava o .apkg se algo mudou no Anki Viewer desde o último
@@ -254,8 +269,7 @@ function Vocab2Deck:syncVocab()
         return self.last_sync
     end
     local state = self:deckState()
-    local exported, definitions = {}, {}
-    for key in pairs(state.cards) do exported[key:match("^(.*)|[fr]$")] = true end
+    local exported, definitions = self:exportedKeys(state), {}
     for vkey, w in pairs(state.words) do
         if w.definition and w.definition ~= "" then definitions[vkey] = w.definition end
     end
@@ -271,6 +285,37 @@ function Vocab2Deck:syncVocab()
     end
     if state.status == "old_schema" or state.status == "bad_schema" then res.error = UI.deckError(state.status) end
     self.last_sync = res
+    return res
+end
+
+-- Palavras que já têm cartão no Anki Viewer ({ [vkey] = true }).
+function Vocab2Deck:exportedKeys(state)
+    local exported = {}
+    for key in pairs((state or self:deckState()).cards or {}) do exported[key:match("^(.*)|[fr]$")] = true end
+    return exported
+end
+
+--[[--
+Traz os destaques de todos os livros do histórico para o banco próprio (sem
+dicionário). Destaques novos vão para o Inbox. Desligado com "Trazer os
+destaques dos livros: Não". Resultado em self.last_highlights.
+--]]
+function Vocab2Deck:syncHighlights()
+    if not self.settings:get("import_highlights") then
+        self.last_highlights = nil
+        return nil
+    end
+    local ok, read = pcall(HighlightReader.read, { ui = self.ui })
+    if not ok then
+        Safe.log("destaques:", read)
+        self.last_highlights = { error = T(_("Os destaques dos livros não foram lidos: %1"), Safe.shortError(read)), added = 0 }
+        return self.last_highlights
+    end
+    local res = self:getStore():syncFromHighlights(read.highlights, {
+        exported = self:exportedKeys(), passage = function(text) return HighlightReader.isPassage(text) end,
+    })
+    res.books = read.books
+    self.last_highlights = res
     return res
 end
 
@@ -470,9 +515,9 @@ local function sha1()
 end
 
 --[[--
-Passo da exportação: grava <dados>/ankiviewer/shared/Vocab2Deck.apkg com todos
-os cartões que estão no baralho (retrato completo a cada exportação), em
-"Vocab2Deck::Título do livro". Sem interface: só um aviso no resultado se falhar.
+Passo da exportação: grava Vocab2Deck.apkg (na pasta das configurações;
+padrão <dados>/ankiviewer/shared) com todos os cartões que estão no baralho
+(retrato completo a cada exportação), em "Vocab2Deck::<baralho no Anki Viewer>". Sem interface: só um aviso no resultado se falhar.
 @treturn string|nil caminho gravado, string|nil erro
 --]]
 function Vocab2Deck:writeApkg()
@@ -490,6 +535,7 @@ function Vocab2Deck:writeApkg()
                 local c = state.cards[item.vkey .. "|" .. side]
                 if c and c.card_id then
                     notes[#notes + 1] = { key = B.sourceKey(item.vkey, side), book = item.book,
+                                          deck = state.decks[c.deck_id],
                                           front = rendered[side].front, back = rendered[side].back }
                 end
             end
@@ -498,8 +544,7 @@ function Vocab2Deck:writeApkg()
             Safe.log("pacote .apkg não gravado: nenhum cartão no baralho")
             return nil
         end
-        local dir = DataStorage:getDataDir() .. "/ankiviewer/shared"
-        require("util").makePath(dir)
+        require("util").makePath(self:apkgDir())
         local dest = self:apkgPath()
         local wok, werr = Apkg.write{
             path = dest, notes = notes, sqlite = require("lua-ljsqlite3/init"), json = self:jsonCodec(),
@@ -617,7 +662,7 @@ function Vocab2Deck:_export(Trapper, run_opts)
     -- ● Revisados que já tinham cartão voltam a ✓ No baralho
     summary.resent = self:normalizeStatuses(self:deckState())
 
-    -- 4. pacote para o Anki (ankiviewer/shared/Vocab2Deck.apkg); falhar aqui não desfaz nada
+    -- 4. pacote para o Anki (Vocab2Deck.apkg); falhar aqui não desfaz nada
     local apkg_path, apkg_err = self:writeApkg()
     self._apkg_dirty = false
     summary.apkg = apkg_path
@@ -633,9 +678,8 @@ end
 * cartão fora do baralho das configurações: é movido (o progresso vai junto)
 Depois regrava o Vocab2Deck.apkg.
 --]]
-function Vocab2Deck:syncDeck()
-    local msg = UI.busy(_("Sincronizando com o Anki Viewer…"))
-    local ok, res = pcall(function()
+function Vocab2Deck:_syncDeck()
+    return pcall(function()
         local status = self:writer():check()
         if status == "old_schema" or status == "bad_schema" then error(UI.deckError(status), 0) end
         if status == "ok" then self:writer():forgetDeleted() end
@@ -653,19 +697,65 @@ function Vocab2Deck:syncDeck()
         return { created = r.added + r.adopted, updated = r.updated, moved = r.moved, total = #items,
                  apkg = apkg, apkg_err = apkg_err }
     end)
-    UIManager:close(msg)
-    if not ok then
-        Safe.message(T(_("A sincronização falhou; nada foi alterado:\n%1"), Safe.shortError(res)))
-        return
-    end
-    local lines = { T(_("%1 palavras no baralho sincronizadas."), res.total) }
+end
+
+-- Linhas do aviso da sincronização com o Anki Viewer.
+local function deckLines(lines, res)
+    lines[#lines + 1] = T(_("%1 palavras no baralho sincronizadas."), res.total)
     if res.updated > 0 then lines[#lines + 1] = T(_("%1 cartões com texto atualizado."), res.updated) end
     if res.created > 0 then lines[#lines + 1] = T(_("%1 cartões que faltavam foram criados."), res.created) end
     if res.moved > 0 then lines[#lines + 1] = T(_("%1 cartões movidos para o baralho certo."), res.moved) end
     if res.updated + res.created + res.moved == 0 then lines[#lines + 1] = _("Tudo já estava igual.") end
     lines[#lines + 1] = _("O agendamento dos cartões no Anki Viewer não mudou.")
     if res.apkg_err then lines[#lines + 1] = T(_("O pacote Vocab2Deck.apkg não foi gravado: %1"), Safe.shortError(res.apkg_err)) end
-    Safe.message(table.concat(lines, "\n"), 6)
+    return lines
+end
+
+function Vocab2Deck:syncDeck()
+    local msg = UI.busy(_("Sincronizando com o Anki Viewer…"))
+    local ok, res = self:_syncDeck()
+    UIManager:close(msg)
+    if not ok then
+        Safe.message(T(_("A sincronização falhou; nada foi alterado:\n%1"), Safe.shortError(res)))
+        return
+    end
+    Safe.message(table.concat(deckLines({}, res), "\n"), 6)
+    local top = self.app and self.app:topScreen()
+    if top then top:onRevealed() end
+end
+
+--[[--
+Sincronizar (Início): a varredura que junta tudo no plugin.
+1. Vocabulary Builder -> Inbox (palavras novas)
+2. destaques de todos os livros do histórico -> Inbox (destaques novos)
+3. ✓ No baralho -> Anki Viewer (como syncDeck), se houver algum
+--]]
+function Vocab2Deck:syncAll()
+    local msg = UI.busy(_("Sincronizando…"))
+    local lines = {}
+    local v = self:syncVocab()
+    if v.error then
+        lines[#lines + 1] = v.error
+    else
+        lines[#lines + 1] = T(_("Vocabulary Builder: %1 palavras, %2 novas no Inbox."), v.total, v.added)
+    end
+    local hl = self:syncHighlights()
+    if hl and hl.error then
+        lines[#lines + 1] = hl.error
+    elseif hl then
+        lines[#lines + 1] = T(_("Destaques: %1 em %2 livros, %3 novos no Inbox."), hl.total, hl.books, hl.added)
+    end
+    local deck_ok, deck = true, nil
+    if self:getStore():count({ statuses = { deck = true } }) > 0 then
+        deck_ok, deck = self:_syncDeck()
+    end
+    UIManager:close(msg)
+    if not deck_ok then
+        lines[#lines + 1] = T(_("A sincronização com o Anki Viewer falhou; o baralho não foi alterado:\n%1"), Safe.shortError(deck))
+    elseif deck then
+        deckLines(lines, deck)
+    end
+    Safe.message(table.concat(lines, "\n"), 8)
     local top = self.app and self.app:topScreen()
     if top then top:onRevealed() end
 end
@@ -795,9 +885,175 @@ function Vocab2Deck:importApkg()
     Safe.run(_("importar"), av.importLocalApkg, av)
 end
 
--- Toque longo num baralho do Início: estudar, mapeamento de campos, apagar.
+--[[--
+Caixa Vocabulário do Início: abre a tela original do Vocabulary Builder do
+KOReader (plugin vocabbuilder.koplugin, registrado como ui.vocabulary_builder),
+pelo mesmo caminho do menu dele (onShowVocabBuilder) ou, sem ele, pelo evento
+da ação de gesto (ShowVocabBuilder). Nada do banco dele é tocado por nós.
+--]]
+function Vocab2Deck:openVocabBuilder()
+    local ok, opened = pcall(function()
+        local vb = self.ui and (self.ui.vocabulary_builder or self.ui.vocabbuilder)
+        if vb and vb.onShowVocabBuilder then
+            vb:onShowVocabBuilder()
+            return true
+        end
+        if self.ui and self.ui.handleEvent then
+            return self.ui:handleEvent(require("ui/event"):new("ShowVocabBuilder")) == true
+        end
+        return false
+    end)
+    if not ok then
+        Safe.log("Vocabulary Builder:", opened)
+        Safe.message(T(_("O Vocabulary Builder não abriu:\n%1"), Safe.shortError(opened)))
+    elseif not opened then
+        Safe.message(_("O Vocabulary Builder do KOReader não está ativo. Ative-o em Ferramentas ▸ Gerenciamento de plugins."))
+    end
+end
+
+-- Toque longo num baralho do Início: estudar, sub-baralho, renomear, mover, apagar.
 function Vocab2Deck:deckOptions(deck)
     UI.deckOptions(self, deck)
+end
+
+-- Baralhos (organização) ----------------------------------------------------------------
+
+-- Depois de mudar baralhos: o Início (ou a tela de cima) relê tudo; o .apkg é regravado ao fechar.
+function Vocab2Deck:decksChanged()
+    self._apkg_dirty = true
+    local top = self.app and self.app:topScreen()
+    if top then top:onRevealed() end
+end
+
+-- Novo baralho vazio ("A::B" cria B dentro de A). @treturn string|nil nome criado
+function Vocab2Deck:createDeck(name)
+    local clean = Decks.normalize(name)
+    if not clean then
+        Safe.message(_("O nome do baralho não pode ficar vazio."), 3)
+        return nil
+    end
+    local ok, id_or_err, existed = pcall(DeckWriter.createDeck, self:writer(), clean)
+    if not ok then
+        Safe.message(T(_("O baralho não foi criado:\n%1"), Safe.shortError(id_or_err)))
+        return nil
+    end
+    self._session_backup = true
+    if existed then
+        Safe.message(T(_("O baralho \"%1\" já existe."), clean), 3)
+    else
+        Safe.message(T(_("Baralho \"%1\" criado."), clean), 3)
+    end
+    self:decksChanged()
+    return clean
+end
+
+--[[--
+Renomeia (ou move: mudar o caminho "A::B") um baralho e os de dentro dele.
+No Anki Viewer só o nome muda (cartões e progresso ficam). Aqui, o que
+apontava para o nome antigo passa a apontar para o novo, para os cartões não
+voltarem para lá: o baralho das configurações, os escolhidos em cada cartão
+e, com "um baralho por livro", os livros desse baralho (que ficam fixos no
+nome novo).
+@treturn boolean ok
+--]]
+function Vocab2Deck:renameDeck(old, new)
+    local target = Decks.normalize(new)
+    if not target then
+        Safe.message(_("O nome do baralho não pode ficar vazio."), 3)
+        return false
+    end
+    if target == old then return true end
+    local opts = self.settings:cardOptions()
+    local ok, err = pcall(function()
+        -- livros cujo baralho (pelo título) está sendo renomeado
+        local pins = {}
+        if opts.subdeck_per_book then
+            for __, it in ipairs(self:getStore():all()) do
+                if it.status ~= "discarded" and not (it.deck and it.deck ~= "") then
+                    local to = Decks.renamed(B.deckName(opts, it.book), old, target)
+                    if to then
+                        pins[to] = pins[to] or {}
+                        table.insert(pins[to], it.vkey)
+                    end
+                end
+            end
+        end
+        DeckWriter.renameDeck(self:writer(), old, target)
+        self._session_backup = true
+        self:getStore():renameDeck(old, target)
+        for name, keys in pairs(pins) do self:getStore():setDeck(keys, name) end
+        local setting = Decks.renamed(opts.deck_name, old, target)
+        if setting then self.settings:set("deck_name", setting) end
+    end)
+    if not ok then
+        Safe.message(T(_("O baralho não foi renomeado:\n%1"), Safe.shortError(err)))
+        return false
+    end
+    -- o mapeamento de campos de um baralho importado é guardado pelo nome
+    local av = self:getViewer()
+    if av and av.renameDeckMetadata then pcall(av.renameDeckMetadata, av, old, target) end
+    self:decksChanged()
+    return true
+end
+
+-- Move um baralho para dentro de outro (parent) ou para o topo (parent = nil).
+function Vocab2Deck:moveDeck(name, parent)
+    if parent and Decks.isWithin(parent, name) then
+        Safe.message(_("Um baralho não pode ir para dentro dele mesmo."), 3)
+        return false
+    end
+    return self:renameDeck(name, Decks.join(parent, Decks.leaf(name)))
+end
+
+-- Baralho em que está cada item no Anki Viewer ({ [vkey] = nome }).
+function Vocab2Deck:itemDecks(state)
+    state = state or self:deckState()
+    local out = {}
+    for key, c in pairs(state.cards or {}) do
+        if c.card_id and state.decks[c.deck_id] then
+            local vkey, side = key:match("^(.*)|([fr])$")
+            if side == "f" or not out[vkey] then out[vkey] = state.decks[c.deck_id] end
+        end
+    end
+    return out
+end
+
+-- Baralho para onde vão os cartões de um item (o escolhido, o do livro ou o das configurações).
+function Vocab2Deck:targetDeck(item)
+    return B.deckName(self.settings:cardOptions(), item.book, item.deck)
+end
+
+--[[--
+Trocar baralho: guarda o baralho escolhido nos itens e, nos que já estão no
+baralho, move os cartões no Anki Viewer agora (o progresso vai junto; o
+baralho de onde saíram fica, mesmo vazio).
+@treturn number|nil cartões movidos (nil se falhou)
+--]]
+function Vocab2Deck:setItemsDeck(vkeys, deck)
+    local name = Decks.normalize(deck)
+    if not name then return nil end
+    local ok, res = pcall(function()
+        local store = self:getStore()
+        store:setDeck(vkeys, name)
+        local items = {}
+        for __, k in ipairs(vkeys) do
+            local it = store:get(k)
+            if it and it.status == "deck" then items[#items + 1] = it end
+        end
+        if #items == 0 then return 0 end
+        local plan = Sync.plan(items, self:deckState(), self:modelResolver(), self:planOptions())
+        if #plan.moves == 0 then return 0 end
+        local r = DeckWriter.apply(self:writer(), { moves = plan.moves, keep_empty = true },
+            { backup_done = self._session_backup })
+        self._session_backup = true
+        return r.moved
+    end)
+    if not ok then
+        Safe.message(T(_("O baralho não foi trocado:\n%1"), Safe.shortError(res)))
+        return nil
+    end
+    self:decksChanged()
+    return res
 end
 
 return Vocab2Deck

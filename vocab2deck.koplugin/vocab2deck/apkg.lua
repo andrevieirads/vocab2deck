@@ -2,9 +2,11 @@
 Pacote do Anki (.apkg) com os cartões que estão no baralho, gravado em
 <dados do KOReader>/ankiviewer/shared/Vocab2Deck.apkg a cada exportação.
 
-Hierarquia: baralho principal "Vocab2Deck" e um subbaralho por livro,
-"Vocab2Deck::Título do livro"; cada cartão fica no subbaralho do seu livro
-(sem livro: no principal). Cada cartão do plugin (palavra + lado) vira uma
+Hierarquia: baralho principal "Vocab2Deck" e, dentro dele, os baralhos do
+Anki Viewer como estão organizados aqui ("Inglês::Verbos" vira
+"Vocab2Deck::Inglês::Verbos"); cada cartão vai para o baralho em que está no
+Anki Viewer. Nota sem baralho conhecido: subbaralho do livro, como antes
+("Vocab2Deck::Título do livro"; sem livro, o principal). Cada cartão do plugin (palavra + lado) vira uma
 nota do tipo "Vocab2Deck" (campos Frente e Verso; verso =
 {{FrontSide}}<hr id=answer>{{Verso}}, como o "Básico" do Anki).
 
@@ -17,6 +19,8 @@ collection.anki2 + "media", zipada). Corrigido aqui: a tabela revlog tem a
 coluna ease, que faltava no KR2Anki e fazia o Anki recusar o pacote
 ("no such column: ease").
 --]]
+
+local Decks = require("vocab2deck/decks")
 
 local A = {}
 
@@ -66,6 +70,13 @@ function A.deckName(book)
     local b = tostring(book or ""):gsub("%s+", " "):gsub("^ ", ""):gsub(" $", "")
     if b == "" then return A.DECK end
     return A.DECK .. "::" .. b:gsub("::+", ":")
+end
+
+-- Baralho de uma nota no pacote.
+function A.noteDeck(n)
+    local deck = n.deck and Decks.normalize(n.deck)
+    if deck then return A.DECK .. "::" .. deck end
+    return A.deckName(n.book)
 end
 
 -- Texto puro -> HTML do campo do Anki.
@@ -134,7 +145,8 @@ end
 Grava o pacote.
 @param opts {
   path   arquivo .apkg de destino (gravado num temporário e trocado no fim)
-  notes  { { key, book, front, back } }  texto puro (front/back sem repetir a frente)
+  notes  { { key, book, deck, front, back } }  texto puro (front/back sem repetir a frente);
+         deck = nome do baralho no Anki Viewer (ou nil)
   sqlite, json, sha1, zip  dependências (lua-ljsqlite3, rapidjson, função sha1 hex, Zip.write)
   tmpdir pasta para a coleção temporária
 }
@@ -146,15 +158,16 @@ function A.write(opts)
     local tmp = (opts.tmpdir or "/tmp") .. "/vocab2deck-" .. tostring(now) .. "-" .. math.random(1000, 9999) .. ".anki2"
     os.remove(tmp)
 
-    -- baralho principal sempre, mais um subbaralho por livro
+    -- baralho principal sempre, mais os das notas e os de cima deles ("A" de "A::B")
     local decks, order = { [A.DECK] = A.deckId(A.DECK) }, { A.DECK }
-    for _, n in ipairs(opts.notes) do
-        local name = A.deckName(n.book)
-        if not decks[name] then
-            decks[name] = A.deckId(name)
-            order[#order + 1] = name
-        end
+    local function add(name)
+        if decks[name] then return end
+        local parent = name:match("^(.*)::")
+        if parent and parent ~= "" then add(parent) end
+        decks[name] = A.deckId(name)
+        order[#order + 1] = name
     end
+    for _, n in ipairs(opts.notes) do add(A.noteDeck(n)) end
 
     local ok, err = pcall(function()
         local conn = SQ3.open(tmp)
@@ -186,7 +199,7 @@ function A.write(opts)
                 front .. "\31" .. back, sfld, tonumber(sha1(sfld):sub(1, 8), 16))
             note_stmt:step()
             card_stmt:reset()
-            card_stmt:bind(base_id + #opts.notes + i, nid, decks[A.deckName(n.book)], now, i)
+            card_stmt:bind(base_id + #opts.notes + i, nid, decks[A.noteDeck(n)], now, i)
             card_stmt:step()
         end
         note_stmt:close()

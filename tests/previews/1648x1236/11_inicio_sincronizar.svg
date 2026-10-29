@@ -1,71 +1,577 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1648" height="1236" viewBox="0 0 1648 1236" style="background:#fff">
 <rect x="0" y="0" width="1648" height="1236" rx="0" fill="#ffffff"/>
-<text x="29" y="74" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#000000">‹</text>
-<text x="111" y="70" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:41px" fill="#000000">Vocabulário → Flashcards</text>
-<rect x="0" y="111" width="1648" height="4" fill="#000000"/>
-<text x="30" y="155" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">STATUS</text>
-<text x="30" y="249" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">○</text>
-<text x="94" y="228" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Inbox</text>
-<text x="94" y="268" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">palavras do Vocabulary Builder para revisar</text>
-<text x="881" y="246" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
-<text x="923" y="249" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="30" y="290" width="934" height="2" fill="#999999"/>
-<text x="30" y="362" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">●</text>
-<text x="94" y="341" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Revisados</text>
-<text x="94" y="381" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">prontos para exportar</text>
-<text x="881" y="359" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
-<text x="923" y="362" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="30" y="403" width="934" height="2" fill="#999999"/>
-<text x="30" y="475" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
-<text x="94" y="454" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">No baralho</text>
-<text x="94" y="494" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">já no Anki Viewer</text>
-<text x="881" y="472" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">3</text>
-<text x="923" y="475" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="30" y="516" width="934" height="2" fill="#999999"/>
-<text x="30" y="588" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">×</text>
-<text x="94" y="585" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Descartados</text>
-<text x="881" y="585" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
-<text x="923" y="588" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="30" y="629" width="934" height="4" fill="#000000"/>
-<text x="30" y="673" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">✓ 2 cartões movidos para o baralho certo (progresso</text>
-<text x="30" y="709" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">mantido).</text>
-<text x="30" y="760" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">1 cartões apagados no Anki Viewer (Sincronizar os cria de</text>
-<text x="30" y="796" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">novo).</text>
-<rect x="30" y="830" width="256" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="831.5" width="253.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="90" y="895" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
-<rect x="301" y="830" width="346" height="111" rx="11" fill="#ffffff"/>
-<rect x="302.5" y="831.5" width="343.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="358" y="895" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Sincronizar (3)</text>
-<rect x="662" y="830" width="302" height="111" rx="11" fill="#ffffff"/>
-<rect x="663.5" y="831.5" width="299.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="713" y="895" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
-<rect x="30" y="960" width="260" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="961.5" width="257.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="69" y="1025" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">＋ Adicionar</text>
-<rect x="305" y="960" width="195" height="111" rx="11" fill="#ffffff"/>
-<rect x="306.5" y="961.5" width="192.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="356" y="1025" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
-<rect x="515" y="960" width="216" height="111" rx="11" fill="#ffffff"/>
-<rect x="516.5" y="961.5" width="213.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="561" y="1025" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Importar</text>
-<rect x="746" y="960" width="218" height="111" rx="11" fill="#ffffff"/>
-<rect x="747.5" y="961.5" width="215.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="801" y="1025" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Estudar</text>
-<text x="994" y="178" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">BARALHOS</text>
-<text x="994" y="251" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Meu Vocabulário</text>
-<text x="994" y="291" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">1 para estudar · 2 cartões</text>
-<text x="1535" y="269" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">1</text>
-<text x="1577" y="272" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="994" y="313" width="624" height="2" fill="#999999"/>
-<text x="994" y="364" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Vocabulary Builder</text>
-<text x="994" y="404" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">0 para estudar · 0 cartões</text>
-<text x="1535" y="382" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
-<text x="1577" y="385" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<rect x="0" y="1075" width="1648" height="4" fill="#000000"/>
-<rect x="30" y="1102" width="786" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="1103.5" width="783.0" height="108.0" rx="11" fill="none" stroke="#999999" stroke-width="3"/>
-<text x="320" y="1169" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#999999">Revisar (0)</text>
-<rect x="831" y="1102" width="787" height="111" rx="11" fill="#000000"/>
-<text x="1112" y="1169" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#ffffff">Exportar (0)</text>
+<rect x="61" y="48" width="3" height="3" fill="#000000"/>
+<rect x="60" y="49" width="3" height="3" fill="#000000"/>
+<rect x="59" y="50" width="3" height="3" fill="#000000"/>
+<rect x="58" y="51" width="3" height="3" fill="#000000"/>
+<rect x="57" y="52" width="3" height="3" fill="#000000"/>
+<rect x="56" y="53" width="3" height="3" fill="#000000"/>
+<rect x="55" y="54" width="3" height="3" fill="#000000"/>
+<rect x="54" y="55" width="3" height="3" fill="#000000"/>
+<rect x="53" y="56" width="3" height="3" fill="#000000"/>
+<rect x="52" y="57" width="3" height="3" fill="#000000"/>
+<rect x="51" y="58" width="3" height="3" fill="#000000"/>
+<rect x="50" y="59" width="3" height="3" fill="#000000"/>
+<rect x="49" y="60" width="3" height="3" fill="#000000"/>
+<rect x="48" y="61" width="3" height="3" fill="#000000"/>
+<rect x="47" y="62" width="3" height="3" fill="#000000"/>
+<rect x="46" y="63" width="3" height="3" fill="#000000"/>
+<rect x="47" y="63" width="3" height="3" fill="#000000"/>
+<rect x="48" y="64" width="3" height="3" fill="#000000"/>
+<rect x="49" y="65" width="3" height="3" fill="#000000"/>
+<rect x="50" y="66" width="3" height="3" fill="#000000"/>
+<rect x="51" y="67" width="3" height="3" fill="#000000"/>
+<rect x="52" y="68" width="3" height="3" fill="#000000"/>
+<rect x="53" y="69" width="3" height="3" fill="#000000"/>
+<rect x="54" y="70" width="3" height="3" fill="#000000"/>
+<rect x="55" y="71" width="3" height="3" fill="#000000"/>
+<rect x="56" y="72" width="3" height="3" fill="#000000"/>
+<rect x="57" y="73" width="3" height="3" fill="#000000"/>
+<rect x="58" y="74" width="3" height="3" fill="#000000"/>
+<rect x="59" y="75" width="3" height="3" fill="#000000"/>
+<rect x="60" y="76" width="3" height="3" fill="#000000"/>
+<rect x="61" y="77" width="3" height="3" fill="#000000"/>
+<text x="111" y="37" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:23px" fill="#444444">VOCABULÁRIO</text>
+<text x="111" y="99" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:49px" fill="#000000">Flashcards</text>
+<rect x="1591" y="45" width="5" height="1" fill="#000000"/>
+<rect x="1590" y="46" width="7" height="1" fill="#000000"/>
+<rect x="1589" y="47" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="48" width="9" height="1" fill="#000000"/>
+<rect x="1588" y="49" width="11" height="1" fill="#000000"/>
+<rect x="1589" y="50" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="51" width="9" height="1" fill="#000000"/>
+<rect x="1590" y="52" width="7" height="1" fill="#000000"/>
+<rect x="1591" y="53" width="5" height="1" fill="#000000"/>
+<rect x="1591" y="60" width="5" height="1" fill="#000000"/>
+<rect x="1590" y="61" width="7" height="1" fill="#000000"/>
+<rect x="1589" y="62" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="63" width="9" height="1" fill="#000000"/>
+<rect x="1588" y="64" width="11" height="1" fill="#000000"/>
+<rect x="1589" y="65" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="66" width="9" height="1" fill="#000000"/>
+<rect x="1590" y="67" width="7" height="1" fill="#000000"/>
+<rect x="1591" y="68" width="5" height="1" fill="#000000"/>
+<rect x="1591" y="74" width="5" height="1" fill="#000000"/>
+<rect x="1590" y="75" width="7" height="1" fill="#000000"/>
+<rect x="1589" y="76" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="77" width="9" height="1" fill="#000000"/>
+<rect x="1588" y="78" width="11" height="1" fill="#000000"/>
+<rect x="1589" y="79" width="9" height="1" fill="#000000"/>
+<rect x="1589" y="80" width="9" height="1" fill="#000000"/>
+<rect x="1590" y="81" width="7" height="1" fill="#000000"/>
+<rect x="1591" y="82" width="5" height="1" fill="#000000"/>
+<rect x="0" y="128" width="1648" height="4" fill="#000000"/>
+<text x="30" y="198" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">PARA ESTUDAR HOJE</text>
+<text x="30" y="323" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:98px" fill="#000000">1</text>
+<text x="107" y="279" style="font-family:Georgia, serif;font-size:34px" fill="#000000">cartão</text>
+<text x="107" y="323" style="font-family:Georgia, serif;font-size:28px" fill="#444444">no baralho Meu Vocabulário</text>
+<rect x="30" y="378" width="916" height="111" rx="11" fill="#000000"/>
+<text x="352" y="447" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:38px" fill="#ffffff">Estudar agora</text>
+<text x="30" y="570" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">DO KINDLE PARA O ANKI</text>
+<rect x="30" y="594" width="913" height="188" rx="11" fill="#ffffff"/>
+<rect x="32.0" y="596.0" width="909.0" height="184.0" rx="11" fill="none" stroke="#000000" stroke-width="4"/>
+<text x="87" y="692" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#000000">3</text>
+<text x="44" y="731" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:19px" fill="#000000">Vocabulário</text>
+<rect x="177" y="620" width="2" height="135" fill="#999999"/>
+<text x="240" y="689" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#999999">0</text>
+<text x="198" y="732" style="font-family:Helvetica, Arial, sans-serif;font-size:23px" fill="#444444">Destaques</text>
+<rect x="331" y="623" width="2" height="48" fill="#999999"/>
+<rect x="329" y="680" width="2" height="2" fill="#000000"/>
+<rect x="329" y="681" width="2" height="2" fill="#000000"/>
+<rect x="330" y="682" width="2" height="2" fill="#000000"/>
+<rect x="331" y="683" width="2" height="2" fill="#000000"/>
+<rect x="332" y="684" width="2" height="2" fill="#000000"/>
+<rect x="333" y="685" width="2" height="2" fill="#000000"/>
+<rect x="334" y="686" width="2" height="2" fill="#000000"/>
+<rect x="335" y="687" width="2" height="2" fill="#000000"/>
+<rect x="334" y="687" width="2" height="2" fill="#000000"/>
+<rect x="333" y="688" width="2" height="2" fill="#000000"/>
+<rect x="332" y="689" width="2" height="2" fill="#000000"/>
+<rect x="331" y="690" width="2" height="2" fill="#000000"/>
+<rect x="330" y="691" width="2" height="2" fill="#000000"/>
+<rect x="329" y="692" width="2" height="2" fill="#000000"/>
+<rect x="329" y="693" width="2" height="2" fill="#000000"/>
+<rect x="331" y="704" width="2" height="48" fill="#999999"/>
+<text x="395" y="689" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#999999">0</text>
+<text x="378" y="732" style="font-family:Helvetica, Arial, sans-serif;font-size:23px" fill="#444444">Inbox</text>
+<rect x="485" y="623" width="2" height="48" fill="#999999"/>
+<rect x="483" y="680" width="2" height="2" fill="#000000"/>
+<rect x="483" y="681" width="2" height="2" fill="#000000"/>
+<rect x="484" y="682" width="2" height="2" fill="#000000"/>
+<rect x="485" y="683" width="2" height="2" fill="#000000"/>
+<rect x="486" y="684" width="2" height="2" fill="#000000"/>
+<rect x="487" y="685" width="2" height="2" fill="#000000"/>
+<rect x="488" y="686" width="2" height="2" fill="#000000"/>
+<rect x="489" y="687" width="2" height="2" fill="#000000"/>
+<rect x="488" y="687" width="2" height="2" fill="#000000"/>
+<rect x="487" y="688" width="2" height="2" fill="#000000"/>
+<rect x="486" y="689" width="2" height="2" fill="#000000"/>
+<rect x="485" y="690" width="2" height="2" fill="#000000"/>
+<rect x="484" y="691" width="2" height="2" fill="#000000"/>
+<rect x="483" y="692" width="2" height="2" fill="#000000"/>
+<rect x="483" y="693" width="2" height="2" fill="#000000"/>
+<rect x="485" y="704" width="2" height="48" fill="#999999"/>
+<text x="548" y="689" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#999999">0</text>
+<text x="506" y="732" style="font-family:Helvetica, Arial, sans-serif;font-size:23px" fill="#444444">Revisados</text>
+<rect x="639" y="623" width="2" height="48" fill="#999999"/>
+<rect x="637" y="680" width="2" height="2" fill="#000000"/>
+<rect x="637" y="681" width="2" height="2" fill="#000000"/>
+<rect x="638" y="682" width="2" height="2" fill="#000000"/>
+<rect x="639" y="683" width="2" height="2" fill="#000000"/>
+<rect x="640" y="684" width="2" height="2" fill="#000000"/>
+<rect x="641" y="685" width="2" height="2" fill="#000000"/>
+<rect x="642" y="686" width="2" height="2" fill="#000000"/>
+<rect x="643" y="687" width="2" height="2" fill="#000000"/>
+<rect x="642" y="687" width="2" height="2" fill="#000000"/>
+<rect x="641" y="688" width="2" height="2" fill="#000000"/>
+<rect x="640" y="689" width="2" height="2" fill="#000000"/>
+<rect x="639" y="690" width="2" height="2" fill="#000000"/>
+<rect x="638" y="691" width="2" height="2" fill="#000000"/>
+<rect x="637" y="692" width="2" height="2" fill="#000000"/>
+<rect x="637" y="693" width="2" height="2" fill="#000000"/>
+<rect x="639" y="704" width="2" height="48" fill="#999999"/>
+<text x="703" y="689" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#000000">3</text>
+<text x="654" y="732" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:23px" fill="#000000">No baralho</text>
+<rect x="793" y="620" width="2" height="135" fill="#999999"/>
+<text x="857" y="692" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:53px" fill="#999999">0</text>
+<text x="814" y="731" style="font-family:Helvetica, Arial, sans-serif;font-size:19px" fill="#444444">Descartados</text>
+<text x="30" y="830" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">✓ 2 cartões movidos para o baralho certo (progresso</text>
+<text x="30" y="866" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">mantido).</text>
+<text x="30" y="910" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">1 cartões apagados no Anki Viewer (Sincronizar os cria de</text>
+<text x="30" y="946" text-anchor="start" style="font-family:Georgia, serif;font-style:italic;font-size:28px" fill="#444444">novo).</text>
+<text x="1006" y="198" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">BARALHOS</text>
+<rect x="1006" y="222" width="612" height="3" fill="#000000"/>
+<text x="1006" y="284" style="font-family:Georgia, serif;font-size:36px" fill="#000000">Meu Vocabulário</text>
+<text x="1006" y="325" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">2 cartões</text>
+<rect x="1523" y="269" width="42" height="42" rx="21" fill="#000000"/>
+<text x="1536" y="300" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#ffffff">1</text>
+<rect x="1596" y="277" width="2" height="2" fill="#000000"/>
+<rect x="1597" y="278" width="2" height="2" fill="#000000"/>
+<rect x="1598" y="279" width="2" height="2" fill="#000000"/>
+<rect x="1599" y="280" width="2" height="2" fill="#000000"/>
+<rect x="1600" y="281" width="2" height="2" fill="#000000"/>
+<rect x="1601" y="282" width="2" height="2" fill="#000000"/>
+<rect x="1602" y="283" width="2" height="2" fill="#000000"/>
+<rect x="1603" y="284" width="2" height="2" fill="#000000"/>
+<rect x="1604" y="285" width="2" height="2" fill="#000000"/>
+<rect x="1605" y="286" width="2" height="2" fill="#000000"/>
+<rect x="1606" y="287" width="2" height="2" fill="#000000"/>
+<rect x="1607" y="288" width="2" height="2" fill="#000000"/>
+<rect x="1608" y="289" width="2" height="2" fill="#000000"/>
+<rect x="1607" y="290" width="2" height="2" fill="#000000"/>
+<rect x="1606" y="291" width="2" height="2" fill="#000000"/>
+<rect x="1605" y="292" width="2" height="2" fill="#000000"/>
+<rect x="1604" y="293" width="2" height="2" fill="#000000"/>
+<rect x="1603" y="294" width="2" height="2" fill="#000000"/>
+<rect x="1602" y="295" width="2" height="2" fill="#000000"/>
+<rect x="1601" y="296" width="2" height="2" fill="#000000"/>
+<rect x="1600" y="297" width="2" height="2" fill="#000000"/>
+<rect x="1599" y="298" width="2" height="2" fill="#000000"/>
+<rect x="1598" y="299" width="2" height="2" fill="#000000"/>
+<rect x="1597" y="300" width="2" height="2" fill="#000000"/>
+<rect x="1596" y="301" width="2" height="2" fill="#000000"/>
+<rect x="1006" y="356" width="612" height="2" fill="#999999"/>
+<text x="1006" y="417" style="font-family:Georgia, serif;font-size:36px" fill="#000000">Vocabulary Builder</text>
+<text x="1006" y="458" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">0 cartões · em dia</text>
+<rect x="1596" y="410" width="2" height="2" fill="#000000"/>
+<rect x="1597" y="411" width="2" height="2" fill="#000000"/>
+<rect x="1598" y="412" width="2" height="2" fill="#000000"/>
+<rect x="1599" y="413" width="2" height="2" fill="#000000"/>
+<rect x="1600" y="414" width="2" height="2" fill="#000000"/>
+<rect x="1601" y="415" width="2" height="2" fill="#000000"/>
+<rect x="1602" y="416" width="2" height="2" fill="#000000"/>
+<rect x="1603" y="417" width="2" height="2" fill="#000000"/>
+<rect x="1604" y="418" width="2" height="2" fill="#000000"/>
+<rect x="1605" y="419" width="2" height="2" fill="#000000"/>
+<rect x="1606" y="420" width="2" height="2" fill="#000000"/>
+<rect x="1607" y="421" width="2" height="2" fill="#000000"/>
+<rect x="1608" y="422" width="2" height="2" fill="#000000"/>
+<rect x="1607" y="423" width="2" height="2" fill="#000000"/>
+<rect x="1606" y="424" width="2" height="2" fill="#000000"/>
+<rect x="1605" y="425" width="2" height="2" fill="#000000"/>
+<rect x="1604" y="426" width="2" height="2" fill="#000000"/>
+<rect x="1603" y="427" width="2" height="2" fill="#000000"/>
+<rect x="1602" y="428" width="2" height="2" fill="#000000"/>
+<rect x="1601" y="429" width="2" height="2" fill="#000000"/>
+<rect x="1600" y="430" width="2" height="2" fill="#000000"/>
+<rect x="1599" y="431" width="2" height="2" fill="#000000"/>
+<rect x="1598" y="432" width="2" height="2" fill="#000000"/>
+<rect x="1597" y="433" width="2" height="2" fill="#000000"/>
+<rect x="1596" y="434" width="2" height="2" fill="#000000"/>
+<rect x="0" y="1089" width="1648" height="4" fill="#000000"/>
+<rect x="204" y="1120" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1121" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1134" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1135" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1150" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1151" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1156" width="4" height="4" fill="#000000"/>
+<rect x="204" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="185" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="186" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="187" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="188" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="189" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="190" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="191" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="192" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="193" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="194" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="195" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="196" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="197" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="198" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="199" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="200" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="201" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="202" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="203" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="205" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="206" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="207" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="208" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="209" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="210" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="211" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="212" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="213" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="214" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="215" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="216" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="217" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="218" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="219" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="220" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="221" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="222" y="1139" width="4" height="4" fill="#000000"/>
+<text x="146" y="1201" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#000000">Adicionar</text>
+<rect x="626" y="1135" width="4" height="4" fill="#000000"/>
+<rect x="626" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="626" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="624" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="624" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="623" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="623" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="622" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="621" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="621" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="620" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="619" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="618" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="617" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="616" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="615" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="614" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="614" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="613" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="612" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="611" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="610" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="609" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="608" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="607" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="606" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="605" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="605" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="604" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="603" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="602" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="601" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="601" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="600" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="600" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1135" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1134" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="599" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="600" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="600" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="601" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="602" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="602" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="603" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="604" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="605" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="606" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="607" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="608" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="609" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="610" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="611" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="612" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="613" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="614" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="615" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="616" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="617" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="618" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="619" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="620" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="621" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="622" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="623" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="623" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="624" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="624" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="626" y="1134" width="4" height="4" fill="#000000"/>
+<rect x="622" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="623" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="624" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="625" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="626" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="627" y="1150" width="4" height="4" fill="#000000"/>
+<rect x="628" y="1151" width="4" height="4" fill="#000000"/>
+<rect x="629" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="630" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="631" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="632" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="633" y="1156" width="4" height="4" fill="#000000"/>
+<rect x="634" y="1157" width="4" height="4" fill="#000000"/>
+<text x="578" y="1201" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#000000">Buscar</text>
+<rect x="1007" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="1008" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="1008" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1009" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1009" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="1010" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="1011" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="1012" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="1013" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="1014" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="1014" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="1015" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="1016" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1017" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1018" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1019" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1020" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1021" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1022" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1023" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1024" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1025" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1026" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1027" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1028" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1029" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1030" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="1031" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="1031" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="1032" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="1033" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="1034" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="1035" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="1036" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="1036" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1037" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1037" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="1037" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1036" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1035" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1034" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1033" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1032" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1031" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1038" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="1037" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1037" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1036" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1036" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="1035" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="1034" y="1150" width="4" height="4" fill="#000000"/>
+<rect x="1033" y="1151" width="4" height="4" fill="#000000"/>
+<rect x="1032" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="1031" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="1031" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="1030" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="1029" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1028" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1027" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1026" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1025" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1024" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1023" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1022" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1021" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1020" y="1155" width="4" height="4" fill="#000000"/>
+<rect x="1019" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1018" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1017" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1016" y="1154" width="4" height="4" fill="#000000"/>
+<rect x="1015" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="1014" y="1153" width="4" height="4" fill="#000000"/>
+<rect x="1014" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="1013" y="1152" width="4" height="4" fill="#000000"/>
+<rect x="1012" y="1151" width="4" height="4" fill="#000000"/>
+<rect x="1011" y="1150" width="4" height="4" fill="#000000"/>
+<rect x="1010" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="1009" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="1009" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1008" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1008" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1151" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1150" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1149" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1007" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1008" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1009" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1010" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1011" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1012" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1013" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1014" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1047" y="1118" width="35" height="35" rx="17" fill="#000000"/>
+<text x="1058" y="1143" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:23px" fill="#ffffff">3</text>
+<text x="957" y="1201" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#000000">Sincronizar</text>
+<rect x="1440" y="1119" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1120" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1121" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1122" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1123" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1124" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1125" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1126" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1127" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1128" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1129" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1130" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1131" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1132" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1133" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1134" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1135" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1148" width="4" height="4" fill="#000000"/>
+<rect x="1427" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="1428" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="1429" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="1430" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="1431" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="1432" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="1433" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="1434" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="1435" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1436" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="1437" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1438" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1439" y="1147" width="4" height="4" fill="#000000"/>
+<rect x="1441" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1442" y="1146" width="4" height="4" fill="#000000"/>
+<rect x="1443" y="1145" width="4" height="4" fill="#000000"/>
+<rect x="1444" y="1144" width="4" height="4" fill="#000000"/>
+<rect x="1445" y="1143" width="4" height="4" fill="#000000"/>
+<rect x="1446" y="1142" width="4" height="4" fill="#000000"/>
+<rect x="1447" y="1141" width="4" height="4" fill="#000000"/>
+<rect x="1448" y="1140" width="4" height="4" fill="#000000"/>
+<rect x="1449" y="1139" width="4" height="4" fill="#000000"/>
+<rect x="1450" y="1138" width="4" height="4" fill="#000000"/>
+<rect x="1451" y="1137" width="4" height="4" fill="#000000"/>
+<rect x="1452" y="1136" width="4" height="4" fill="#000000"/>
+<rect x="1421" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1422" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1423" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1424" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1425" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1426" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1427" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1428" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1429" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1430" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1431" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1432" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1433" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1434" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1435" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1436" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1437" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1438" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1439" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1440" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1441" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1442" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1443" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1444" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1445" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1446" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1447" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1448" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1449" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1450" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1451" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1452" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1453" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1454" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1455" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1456" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1457" y="1157" width="4" height="4" fill="#000000"/>
+<rect x="1458" y="1157" width="4" height="4" fill="#000000"/>
+<text x="1389" y="1201" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#000000">Importar</text>
 </svg>

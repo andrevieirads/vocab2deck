@@ -2055,6 +2055,31 @@ function AnkiViewer:deleteDeck(deck_id, deck_name)
     self:decksChanged()
 end
 
+-- Baralho renomeado/movido no vocab2deck: o mapeamento de campos e a análise
+-- guardada do .apkg seguem o nome novo (são guardados pelo nome do baralho;
+-- os de dentro dele, "old::…", vão junto).
+function AnkiViewer:renameDeckMetadata(old_name, new_name)
+    if not old_name or not new_name or old_name == new_name then return end
+    local function move(tbl)
+        local found = {}
+        for name in pairs(tbl) do
+            if type(name) == "string" and (name == old_name or name:sub(1, #old_name + 2) == old_name .. "::") then
+                found[#found + 1] = name
+            end
+        end
+        for __, name in ipairs(found) do
+            tbl[new_name .. name:sub(#old_name + 1)] = tbl[name]
+            tbl[name] = nil
+        end
+        return #found > 0
+    end
+    local mappings = loadAllFieldMappings()
+    if move(mappings) then saveAllFieldMappings(mappings) end
+    local cache = loadAllInspectInfo()
+    if move(cache) then saveAllInspectInfo(cache) end
+    self:decksChanged()
+end
+
 -- Field mapping de um baralho importado (o que Settings ▸ Field mapping fazia).
 function AnkiViewer:openDeckFieldMapping(deck)
     self:openCurrentDeckFieldMapping({ deck_id = deck.id, deck_name = deck.name })

@@ -1,5 +1,6 @@
 -- Copiado do KR2Anki (dev/svgrender.lua), só para testes no computador. Créditos: autores do KR2Anki.
--- Alteração: unpack vem de table.unpack quando não existe (Lua 5.2+).
+-- Alterações: unpack vem de table.unpack quando não existe (Lua 5.2+); desenha os ícones do
+-- Kit.icon (lista _rects).
 local unpack = unpack or table.unpack -- luacheck: ignore
 
 -- Render the painted fake-widget tree of the top window to SVG (approximate:
@@ -39,6 +40,11 @@ local function render(top, W, H)
         local d = w.dimen
         if w.invert and d then inv = not inv end
         if mt and mt.__render then mt.__render(w, out, inv, family) end
+        if w._rects then -- Kit.icon (ícones desenhados com retângulos)
+            for _, r in ipairs(w._rects) do
+                table.insert(out, string.format('<rect x="%d" y="%d" width="%d" height="%d" fill="%s"/>', r[1], r[2], r[3], r[4], color(w.color, inv)))
+            end
+        end
         if w.background and d and w.bordersize ~= nil then
             local bg = color(w.background, inv)
             table.insert(out, string.format('<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s"/>', d.x, d.y, d.w, d.h, w.radius or 0, bg))

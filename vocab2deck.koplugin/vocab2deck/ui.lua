@@ -20,6 +20,7 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local Decks = require("vocab2deck/decks")
 local Safe = require("vocab2deck/safe")
 local U = require("vocab2deck/lib/u8")
 
@@ -155,13 +156,13 @@ function UI.showChangedList(plugin, changed)
     UIManager:show(menu)
 end
 
--- Escolha de baralho para estudar (quando há subbaralhos por livro).
+-- Escolha de baralho para estudar (vários baralhos do plugin, ou um baralho com sub-baralhos).
 function UI.chooseDeck(decks, on_choice)
     local dialog
     local buttons = {}
     for __, d in ipairs(decks) do
         buttons[#buttons + 1] = { {
-            text = T(_("%1 — %2 para estudar / %3"), d.name, d.due, d.cards),
+            text = UI.deckLabel(d),
             callback = function() UIManager:close(dialog); on_choice(d) end,
         } }
     end
@@ -170,56 +171,202 @@ function UI.chooseDeck(decks, on_choice)
     UIManager:show(dialog)
 end
 
--- Texto de um baralho nas listas: "Nome — 3 para estudar / 40".
-function UI.deckLabel(d)
-    return T(_("%1 — %2 para estudar / %3"), d.name, d.due, d.cards)
+-- Recuo de um baralho nas listas, conforme o nível ("A::B" fica um passo para dentro).
+local function indent(d)
+    return string.rep("    ", d.depth or Decks.depth(d.name))
 end
 
--- Toque longo num baralho (Início): estudar, mapeamento de campos (baralhos
--- importados de .apkg) e apagar, como no Decks do Anki Viewer.
+-- Texto de um baralho nas listas: "Nome — 3 para estudar / 40" (com recuo, se for sub-baralho).
+function UI.deckLabel(d)
+    local name = d.depth and (indent(d) .. d.label) or d.name
+    return T(_("%1 — %2 para estudar / %3"), name, d.due or 0, d.cards or 0)
+end
+
+--[[--
+Tocar num baralho: estuda. Se ele tem sub-baralhos, pergunta qual (ele
+mesmo ou um dos de dentro), porque a tela de estudo estuda um baralho por vez.
+@param tree a árvore (Decks.tree) com todos os baralhos
+--]]
+function UI.studyFromTree(plugin, tree, deck)
+    local list = {}
+    for __, d in ipairs(Decks.subtree(tree, deck.name)) do
+        if d.id then list[#list + 1] = d end
+    end
+    if #list == 1 and list[1].children == 0 then
+        plugin:studyDeck(list[1].id)
+    elseif #list == 0 then
+        info(T(_("\"%1\" só agrupa outros baralhos e não tem nenhum agora."), deck.name), 3)
+    else
+        UI.chooseDeck(list, function(d) plugin:studyDeck(d.id) end)
+    end
+end
+
+-- Nome de baralho digitado (uma linha). on_name(nome limpo).
+function UI.askDeckName(title, value, description, on_name)
+    local dlg
+    dlg = InputDialog:new{
+        title = title,
+        input = value or "",
+        description = description,
+        buttons = { {
+            { text = _("Cancelar"), id = "close", callback = function() UIManager:close(dlg) end },
+            {
+                text = _("Salvar"), is_enter_default = true,
+                callback = function()
+                    local name = Decks.normalize(dlg:getInputText())
+                    if not name then
+                        info(_("O nome do baralho não pode ficar vazio."), 3)
+                        return
+                    end
+                    UIManager:close(dlg)
+                    on_name(name)
+                end,
+            },
+        } },
+    }
+    UIManager:show(dlg)
+    dlg:onShowKeyboard()
+end
+
+-- ＋ Adicionar ▸ Adicionar baralho
+function UI.newDeck(plugin, parent)
+    local title = parent and T(_("Novo baralho dentro de \"%1\""), parent) or _("Novo baralho")
+    local desc = parent and nil or _("Para criar dentro de outro baralho, use :: (ex.: Inglês::Verbos), ou toque e segure um baralho ▸ Novo sub-baralho.")
+    UI.askDeckName(title, "", desc, function(name)
+        plugin:createDeck(Decks.join(parent, name))
+    end)
+end
+
+--[[--
+Lista em tela cheia para escolher um baralho (com recuo dos sub-baralhos).
+@param opts {
+  title, current (nome marcado com ✓),
+  exclude (nome: ele e os de dentro dele não aparecem),
+  top_text (primeira linha, devolve false: ex.: "No topo"),
+  allow_new (linha "＋ Novo baralho…")
+}
+on_choice(nome | false)
+--]]
+function UI.pickDeck(plugin, opts, on_choice)
+    local items = {}
+    if opts.allow_new then
+        items[#items + 1] = { text = _("＋ Novo baralho…"), new = true }
+    end
+    if opts.top_text then
+        items[#items + 1] = { text = opts.top_text, top = true }
+    end
+    for __, d in ipairs(Decks.tree(plugin:allDecks())) do
+        if not (opts.exclude and Decks.isWithin(d.name, opts.exclude)) then
+            local mark = d.name == opts.current and "  ✓" or ""
+            items[#items + 1] = { text = indent(d) .. d.label .. mark, deck = d.name }
+        end
+    end
+    local menu = UI.fullMenu(opts.title, items)
+    function menu:onMenuChoice(item)
+        UIManager:close(self)
+        if item.new then
+            UI.askDeckName(_("Novo baralho"), "", _("Use :: para criar dentro de outro (ex.: Inglês::Verbos)."),
+                function(name) on_choice(name) end)
+        elseif item.top then
+            on_choice(false)
+        else
+            on_choice(item.deck)
+        end
+        return true
+    end
+    UIManager:show(menu)
+    return menu
+end
+
+-- Trocar o baralho de itens (lista ✓ No baralho ou tela de um item).
+function UI.changeItemsDeck(plugin, vkeys, current, on_done)
+    local title = #vkeys == 1 and _("Mover o cartão para o baralho") or T(_("Mover %1 cartões para o baralho"), #vkeys)
+    UI.pickDeck(plugin, { title = title, current = current, allow_new = true }, function(name)
+        if not name then return end
+        local moved = plugin:setItemsDeck(vkeys, name)
+        if moved == nil then return end
+        if moved > 0 then
+            info(T(_("%1 cartões movidos para \"%2\". O progresso foi junto."), moved, name), 3)
+        else
+            info(T(_("Os próximos cartões vão para \"%1\"."), name), 3)
+        end
+        if on_done then on_done(name) end
+    end)
+end
+
+--[[--
+Toque longo num baralho (Início): estudar, novo sub-baralho, renomear, mover,
+mapeamento de campos (baralhos importados de .apkg) e apagar.
+--]]
 function UI.deckOptions(plugin, deck)
     local dialog
-    local buttons = {
-        { { text = _("Estudar"), callback = function() UIManager:close(dialog); plugin:studyDeck(deck.id) end } },
-    }
-    if not deck.ours then
-        buttons[#buttons + 1] = { { text = _("Mapeamento de campos"), callback = function()
-            UIManager:close(dialog)
+    local function item(text, fn)
+        return { { text = text, callback = function() UIManager:close(dialog); fn() end } }
+    end
+    local buttons = {}
+    if deck.id then
+        buttons[#buttons + 1] = item(_("Estudar"), function() plugin:studyDeck(deck.id) end)
+    end
+    buttons[#buttons + 1] = item(_("Novo sub-baralho…"), function() UI.newDeck(plugin, deck.name) end)
+    buttons[#buttons + 1] = item(_("Renomear…"), function()
+        local parent = Decks.parent(deck.name)
+        UI.askDeckName(_("Renomear o baralho"), Decks.leaf(deck.name),
+            _("Os cartões, o progresso e os sub-baralhos ficam."), function(name)
+                if plugin:renameDeck(deck.name, Decks.join(parent, name)) then
+                    info(_("Baralho renomeado."), 2)
+                end
+            end)
+    end)
+    buttons[#buttons + 1] = item(_("Mover para…"), function()
+        UI.pickDeck(plugin, {
+            title = T(_("Mover \"%1\" para dentro de"), Decks.leaf(deck.name)),
+            exclude = deck.name, current = Decks.parent(deck.name),
+            top_text = _("Nenhum (fica no topo)"),
+        }, function(parent)
+            if parent == nil then return end
+            if plugin:moveDeck(deck.name, parent or nil) then info(_("Baralho movido."), 2) end
+        end)
+    end)
+    if deck.id and not deck.ours then
+        buttons[#buttons + 1] = item(_("Mapeamento de campos"), function()
             local av = plugin:getViewer()
             if av then Safe.run(_("mapeamento de campos"), av.openDeckFieldMapping, av, deck) end
-        end } }
+        end)
     end
-    buttons[#buttons + 1] = { { text = _("Apagar baralho"), callback = function()
-        UIManager:close(dialog)
-        local extra = deck.ours and _("\n\nOs cartões deste plugin voltam na próxima exportação (como cartões novos).") or ""
-        UIManager:show(ConfirmBox:new{
-            text = T(_("Apagar o baralho \"%1\" e os %2 cartões dele, com o progresso?"), deck.name, deck.cards) .. extra,
-            ok_text = _("Apagar"),
-            ok_callback = function()
-                local av = plugin:getViewer()
-                if not av then return end
-                if Safe.run(_("apagar baralho"), function() av:deleteDeck(deck.id, deck.name); return true end) then
-                    info(T(_("Baralho \"%1\" apagado."), deck.name), 3)
-                end
-            end,
-        })
-    end } }
+    if deck.id then
+        buttons[#buttons + 1] = item(_("Apagar baralho"), function()
+            local extra = deck.ours and _("\n\nOs cartões deste plugin voltam na próxima exportação (como cartões novos).") or ""
+            if (deck.children or 0) > 0 then extra = extra .. "\n\n" .. _("Os sub-baralhos dele não são apagados.") end
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Apagar o baralho \"%1\" e os %2 cartões dele, com o progresso?"), deck.name, deck.cards) .. extra,
+                ok_text = _("Apagar"),
+                ok_callback = function()
+                    local av = plugin:getViewer()
+                    if not av then return end
+                    if Safe.run(_("apagar baralho"), function() av:deleteDeck(deck.id, deck.name); return true end) then
+                        info(T(_("Baralho \"%1\" apagado."), deck.name), 3)
+                    end
+                end,
+            })
+        end)
+    end
     buttons[#buttons + 1] = { { text = _("Fechar"), callback = function() UIManager:close(dialog) end } }
     dialog = ButtonDialog:new{ title = deck.name, title_align = "center", buttons = buttons }
     UIManager:show(dialog)
 end
 
--- Todos os baralhos numa lista em tela cheia (quando não cabem no Início).
-function UI.showDecks(plugin, decks)
+-- Todos os baralhos numa lista em tela cheia (quando não cabem no Início), em árvore.
+function UI.showDecks(plugin, tree)
     local menu
     local items = {}
-    for __, d in ipairs(decks) do
-        items[#items + 1] = { text = UI.deckLabel(d), deck = d }
+    for __, d in ipairs(tree) do
+        items[#items + 1] = { text = T(_("%1 — %2 para estudar / %3"), indent(d) .. d.label, d.total_due or d.due or 0,
+            d.total_cards or d.cards or 0), deck = d }
     end
     menu = UI.fullMenu(_("Baralhos"), items)
     function menu:onMenuChoice(item)
         UIManager:close(self)
-        plugin:studyDeck(item.deck.id)
+        UI.studyFromTree(plugin, tree, item.deck)
         return true
     end
     function menu:onMenuHold(item)
@@ -242,6 +389,26 @@ function UI.fullMenu(title, items)
         width = Screen:getWidth(),
         height = Screen:getHeight(),
     }
+end
+
+-- Escolha de pasta (o seletor de pastas do KOReader). on_dir(caminho).
+function UI.choosePath(start, on_dir)
+    local PathChooser = require("ui/widget/pathchooser")
+    local lfs = require("libs/libkoreader-lfs")
+    -- começa na pasta atual, ou na de cima mais próxima que existe
+    local path = start
+    while path and path ~= "" and lfs.attributes(path, "mode") ~= "directory" do
+        path = path:match("^(.*)/[^/]*$")
+    end
+    local chooser = PathChooser:new{
+        title = _("Pasta do pacote .apkg"),
+        select_directory = true,
+        select_file = false,
+        show_files = false,
+        path = (path and path ~= "") and path or "/",
+        onConfirm = function(dir) on_dir((dir:gsub("/+$", ""))) end,
+    }
+    UIManager:show(chooser)
 end
 
 -- Configurações ---------------------------------------------------------------------
@@ -344,6 +511,32 @@ function UI.showSettings(plugin, on_close)
             callback = toggle("subdeck_per_book", _("Cada livro vira um baralho com o título dele. Os cartões já exportados são movidos (o progresso vai junto).")),
         },
         {
+            text = _("Pasta do pacote .apkg"),
+            keep_menu_open = true,
+            mandatory_func = function()
+                if not s:get("apkg_dir") then return _("Padrão") end
+                return U.ellipsize(plugin:apkgDir():match("([^/]+)$") or plugin:apkgDir(), 20)
+            end,
+            callback = function()
+                choose(T(_("O Vocab2Deck.apkg (para importar no Anki) é gravado em:\n%1"), plugin:apkgDir()), {
+                    { text = _("Escolher outra pasta…"), value = "pick" },
+                    { text = _("Voltar para a padrão (ankiviewer/shared)"), value = "default" },
+                }, function(v)
+                    local function done(dir)
+                        s:set("apkg_dir", dir)
+                        plugin._apkg_dirty = true -- regrava na pasta nova ao fechar o plugin
+                        refresh()
+                        info(T(_("O pacote será gravado em:\n%1"), plugin:apkgPath()), 4)
+                    end
+                    if v == "default" then
+                        done(nil)
+                    else
+                        UI.choosePath(plugin:apkgDir(), done)
+                    end
+                end)
+            end,
+        },
+        {
             text = _("Campos do cartão (modelo)"),
             callback = function() plugin:openModel() end,
         },
@@ -366,6 +559,12 @@ function UI.showSettings(plugin, on_close)
             keep_menu_open = true,
             mandatory_func = function() return s:get("only_unlearned") and _("Só não aprendidas") or _("Todas") end,
             callback = toggle("only_unlearned", _("Vale para as próximas palavras que chegarem ao Inbox.")),
+        },
+        {
+            text = _("Trazer os destaques dos livros"),
+            keep_menu_open = true,
+            mandatory_func = function() return yesNo(s:get("import_highlights")) end,
+            callback = toggle("import_highlights", _("Ao tocar em Sincronizar, os destaques dos livros do histórico chegam ao Inbox.")),
         },
         {
             text = _("Aprendida = acertos seguidos ≥"),
