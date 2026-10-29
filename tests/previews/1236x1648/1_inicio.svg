@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1236" height="1648" viewBox="0 0 1236 1648" style="background:#fff">
+<rect x="0" y="0" width="1236" height="1648" rx="0" fill="#ffffff"/>
+<text x="29" y="74" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#000000">‹</text>
+<text x="111" y="70" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:41px" fill="#000000">Vocabulário → Flashcards</text>
+<rect x="0" y="111" width="1236" height="4" fill="#000000"/>
+<text x="30" y="155" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">STATUS</text>
+<text x="30" y="249" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">○</text>
+<text x="94" y="228" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Inbox</text>
+<text x="94" y="268" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">palavras do Vocabulary Builder para revisar</text>
+<text x="1123" y="246" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">3</text>
+<text x="1165" y="249" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
+<rect x="30" y="290" width="1176" height="2" fill="#999999"/>
+<text x="30" y="362" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">●</text>
+<text x="94" y="341" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Revisados</text>
+<text x="94" y="381" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">prontos para exportar</text>
+<text x="1123" y="359" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
+<text x="1165" y="362" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
+<rect x="30" y="403" width="1176" height="2" fill="#999999"/>
+<text x="30" y="475" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
+<text x="94" y="454" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">No baralho</text>
+<text x="94" y="494" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">já no Anki Viewer</text>
+<text x="1123" y="472" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
+<text x="1165" y="475" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
+<rect x="30" y="516" width="1176" height="2" fill="#999999"/>
+<text x="30" y="588" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">×</text>
+<text x="94" y="585" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Descartados</text>
+<text x="1123" y="585" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">0</text>
+<text x="1165" y="588" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
+<rect x="30" y="629" width="1176" height="4" fill="#000000"/>
+<text x="30" y="673" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">○ 3 palavras novas vieram do Vocabulary Builder.</text>
+<rect x="30" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="153" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
+<rect x="427" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
+<rect x="428.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="572" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
+<rect x="824" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
+<rect x="825.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="915" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
+<rect x="30" y="837" width="1176" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="838.5" width="1173.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="412" y="904" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">Estudar no Anki Viewer</text>
+<rect x="0" y="1487" width="1236" height="4" fill="#000000"/>
+<rect x="30" y="1514" width="580" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="1515.5" width="577.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="217" y="1581" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">Revisar (3)</text>
+<rect x="625" y="1514" width="581" height="111" rx="11" fill="#000000"/>
+<text x="803" y="1581" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#ffffff">Exportar (0)</text>
+</svg>
