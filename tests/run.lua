@@ -865,14 +865,17 @@ scenario("Descartados: Limpar tira do plugin e não volta do Vocabulary Builder"
     check(contains(info(), "2 palavras limpas"), "aviso")
     eq(p:getStore():counts().discarded, 0, "nenhum descartado")
     eq(p:getStore():get("w:quixotic"), nil, "saiu do plugin")
+    -- a leitura do Vocabulary Builder não traz de volta
     UIM.stack = {}
     p:onVocab2DeckOpen()
     eq(p:getStore():get("w:quixotic"), nil, "não voltou do Vocabulary Builder")
     eq(p:getStore():count({}), 1, "só serendipity no plugin")
+    -- fora da seleção nos outros status, continua Descartar
     tapText("^Inbox")
     walk(paintTop(), function(w) if w.text == "serendipity" and w.dimen then target = w return true end end)
     tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
     check(has("× Descartar") and not has("^Limpar$"), "Inbox continua com Descartar")
+    -- adicionar pelo livro traz de volta
     UIM.stack = {}
     reader.highlight.selected_text = { text = "quixotic" }
     reader.highlight.buttons.vocab2deck_add(reader.highlight).callback()
