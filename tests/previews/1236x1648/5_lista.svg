@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1236" height="1648" viewBox="0 0 1236 1648" style="background:#fff">
+<rect x="0" y="0" width="1236" height="1648" rx="0" fill="#ffffff"/>
+<text x="29" y="74" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#000000">‹</text>
+<text x="111" y="69" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:38px" fill="#000000">✓ No baralho</text>
+<text x="1141" y="70" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">⌕</text>
+<rect x="0" y="111" width="1236" height="4" fill="#000000"/>
+<text x="30" y="180" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">2 palavras</text>
+<text x="994" y="180" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">Mais novas ⇅</text>
+<rect x="0" y="226" width="1236" height="2" fill="#000000"/>
+<text x="30" y="277" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">quixotic</text>
+<text x="30" y="317" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Livro B</text>
+<text x="510" y="272" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">exceedingly idealistic; unrealistic and</text>
+<text x="510" y="308" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">impractical</text>
+<text x="1165" y="298" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
+<rect x="30" y="339" width="1176" height="2" fill="#999999"/>
+<text x="30" y="390" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">serendipity</text>
+<text x="30" y="430" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Livro A</text>
+<text x="510" y="403" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">luck</text>
+<text x="1165" y="411" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✓</text>
+<rect x="30" y="452" width="1176" height="2" fill="#999999"/>
+<text x="113" y="1515" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">○ Inbox · ● Revisado · ✓ No baralho · × Descartado · toque longo seleciona</text>
+<rect x="0" y="1535" width="1236" height="2" fill="#000000"/>
+<text x="570" y="1604" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">1 / 1</text>
+<text x="59" y="1611" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#999999">‹</text>
+<text x="1124" y="1611" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#999999">›</text>
+</svg>

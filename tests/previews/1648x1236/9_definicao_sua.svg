@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1648" height="1236" viewBox="0 0 1648 1236" style="background:#fff">
+<rect x="0" y="0" width="1648" height="1236" rx="0" fill="#ffffff"/>
+<text x="29" y="74" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#000000">‹</text>
+<text x="111" y="70" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:41px" fill="#000000">Revisar 1 / 1</text>
+<text x="1509" y="65" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">○ Inbox</text>
+<rect x="0" y="111" width="1648" height="4" fill="#000000"/>
+<text x="30" y="206" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:56px" fill="#000000">evolving</text>
+<rect x="299" y="130" width="113" height="113" rx="11" fill="#ffffff"/>
+<rect x="300.5" y="131.5" width="110.0" height="110.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="335" y="201" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">✎</text>
+<rect x="30" y="269" width="779" height="162" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="270.5" width="776.0" height="159.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="59" y="335" text-anchor="start" style="font-family:Georgia, serif;font-size:36px" fill="#444444">Sem frase: o Vocabulary Builder não</text>
+<text x="59" y="387" text-anchor="start" style="font-family:Georgia, serif;font-size:36px" fill="#444444">guardou contexto para esta palavra.</text>
+<text x="30" y="466" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Databricks Guide</text>
+<rect x="30" y="502" width="779" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="503.5" width="776.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="47" y="569" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">✎ Campos do cartão (5) · pré-visualizar</text>
+<text x="839" y="170" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">ESCOLHA O SENTIDO</text>
+<rect x="839" y="227" width="45" height="45" rx="22" fill="#ffffff"/>
+<rect x="841.0" y="229.0" width="41.0" height="41.0" rx="22" fill="none" stroke="#000000" stroke-width="4"/>
+<rect x="851" y="239" width="21" height="21" rx="10" fill="#000000"/>
+<text x="910" y="258" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">Sua definição: envolver</text>
+<text x="839" y="377" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">Editar a definição</text>
+<rect x="839" y="388" width="277" height="2" fill="#000000"/>
+<text x="1169" y="377" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#000000">Buscar outra forma</text>
+<rect x="1169" y="388" width="277" height="2" fill="#000000"/>
+<rect x="0" y="1075" width="1648" height="4" fill="#000000"/>
+<rect x="30" y="1102" width="472" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="1103.5" width="469.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="227" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Pular</text>
+<rect x="517" y="1102" width="472" height="111" rx="11" fill="#ffffff"/>
+<rect x="518.5" y="1103.5" width="469.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="668" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">× Descartar</text>
+<rect x="1004" y="1102" width="614" height="111" rx="11" fill="#000000"/>
+<text x="1227" y="1167" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#ffffff">✓ Revisado</text>
+</svg>
