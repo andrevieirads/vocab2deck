@@ -138,7 +138,7 @@ function Export:build(w, h)
     if self.result then
         bottom = Kit.bottomBar(w, {
             { text = _("Fechar"), callback = function() self:onClose() end },
-            { text = _("Estudar no Anki Viewer"), primary = true, enabled = not self.result.error, callback = function()
+            { text = _("Estudar"), primary = true, enabled = not self.result.error, callback = function()
                 self:onClose()
                 self.host:studyNow()
             end },

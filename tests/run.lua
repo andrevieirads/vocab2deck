@@ -1,14 +1,15 @@
--- Testes no computador: lua tests/run.lua <pasta temporária> <pasta do ankiviewer.koplugin>
+-- Testes no computador: lua tests/run.lua <pasta temporária>
 -- (use tests/run_tests.sh, que define o tamanho da tela).
 --
 -- Rodam o plugin de verdade (main.lua, telas, store, …) sobre os widgets de
 -- mentira do KR2Anki (uistubs.lua: layout, toques e deslizes), e o
--- ankiviewer_db.lua REAL do Anki Viewer sobre o mesmo banco, para provar que
--- ele lê o que gravamos e que o progresso de revisão é mantido.
+-- banco REAL do Anki Viewer embutido (vocab2deck/ankiviewer/db.lua) sobre o
+-- mesmo arquivo, para provar que ele lê o que gravamos e que o progresso de
+-- revisão é mantido; e a tela de estudo dele aberta pelo Estudar.
 -- Com SNAP_DIR definido, salva um SVG de cada tela principal.
 
-local TMP, AV_DIR = arg[1], arg[2]
-assert(TMP and AV_DIR, "uso: lua tests/run.lua <tmp> <ankiviewer.koplugin>")
+local TMP = arg[1]
+assert(TMP, "uso: lua tests/run.lua <tmp>")
 local HERE = debug.getinfo(1, "S").source:sub(2):match("^(.*)/[^/]+$")
 local PLUGIN = HERE .. "/../vocab2deck.koplugin"
 package.path = PLUGIN .. "/?.lua;" .. HERE .. "/support/?.lua;" .. package.path
@@ -124,9 +125,10 @@ end
 
 local function avDbPath(data) return data .. "/ankiviewer/ankiviewer.sqlite3" end
 
--- Carrega o ankiviewer_db.lua real (cada dofile zera o "initialized" interno).
+-- Carrega o banco do Anki Viewer embutido (cada dofile zera o "initialized"
+-- interno e lê de novo a pasta de dados do cenário).
 local function loadAV()
-    return dofile(AV_DIR .. "/ankiviewer_db.lua")
+    return dofile(PLUGIN .. "/vocab2deck/ankiviewer/db.lua")
 end
 
 local function scalar(data, sql)
@@ -161,9 +163,11 @@ end
 local Plugin = dofile(PLUGIN .. "/main.lua")
 local registered
 local function newPlugin(dict, av, extra)
-    local ui = { menu = { registerToMainMenu = function(_, x) registered = x end }, dictionary = dict, ankiviewer = av }
+    local ui = { menu = { registerToMainMenu = function(_, x) registered = x end }, dictionary = dict }
     for k, v in pairs(extra or {}) do ui[k] = v end
-    return Plugin:new{ ui = ui, path = PLUGIN }
+    local p = Plugin:new{ ui = ui, path = PLUGIN }
+    p.viewer = av -- Anki Viewer de mentira; sem ele, p:getViewer() cria o embutido
+    return p
 end
 
 -- Leitor falso: ReaderHighlight (menu da seleção) e documento com título.
@@ -285,7 +289,7 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     eq(S.p:getStore():counts().deck, 2, "2 itens ✓ No baralho")
     eq(S.p:getStore():counts().inbox, 1, "o pulado segue no Inbox")
 
-    tapText("Estudar no Anki Viewer")
+    tapText("^Estudar$")
     eq(S.av.opened, 1, "Anki Viewer aberto")
     eq(S.av.settings.last_deck_id, decks[1].id, "no baralho certo")
     S.deck_id = decks[1].id
@@ -466,7 +470,7 @@ scenario("só não aprendidas e subbaralho por livro", function()
     p:studyNow()
     check(LAST_buttondialog and contains(LAST_buttondialog.title, "Qual baralho"), "escolha de baralho")
     pressDialogButton(LAST_buttondialog, "Livro B")
-    eq(p.ui.ankiviewer.opened, 1, "abriu")
+    eq(p.viewer.opened, 1, "abriu")
 end)
 
 scenario("caso do aparelho: definição escrita à mão, modelo mudado, cartão antigo e baralho antigo", function()
@@ -1063,12 +1067,67 @@ scenario("banco do Anki Viewer antigo: recusa escrever", function()
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 0, "nada escrito")
 end)
 
-scenario("Anki Viewer desativado e configurações sem erro", function()
+scenario("Anki Viewer embutido: Estudar abre a tela de estudo dele", function()
     local data = freshEnv()
     makeVocab(data, WORDS)
-    local p = newPlugin(fakeDict(DEFS), nil)
-    p:onVocab2DeckReview()
-    check(contains(info(), "não está instalado ou está desativado"), "aviso")
+    -- o banco do Anki Viewer guarda a pasta de dados ao carregar: carrega de novo
+    -- o viewer e o main.lua para este cenário (como o KOReader carrega o plugin)
+    for _, m in ipairs({ "vocab2deck/ankiviewer/viewer", "vocab2deck/ankiviewer/db", "vocab2deck/ankiviewer/apkg_import" }) do
+        package.loaded[m] = nil
+    end
+    local Fresh = dofile(PLUGIN .. "/main.lua")
+    local menus = {}
+    local ui = { menu = { registerToMainMenu = function(_, x) menus[#menus + 1] = x end }, dictionary = fakeDict(DEFS) }
+    local p = Fresh:new{ ui = ui, path = PLUGIN }
+    eq(#menus, 1, "uma só entrada no menu")
+    local av = p:getViewer()
+    check(av and av.showLocalStudy, "Anki Viewer embutido carregou")
+    eq(#menus, 1, "o Anki Viewer embutido não cria outra entrada no menu")
+
+    p:syncVocab()
+    p:getStore():setStatus({ "w:serendipity" }, "ready")
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(1%)")
+    local card_id = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:serendipity'"))
+    local deck_id = tonumber(scalar(data, "SELECT deck_id FROM cards WHERE id = " .. card_id))
+    UIM.stack = {}
+    p:onVocab2DeckReview() -- gesto "estudar"
+    local study = UIM:top()
+    check(study and study.card_widget, "tela de estudo do Anki Viewer aberta")
+    eq(study.deck_id, deck_id, "no baralho exportado")
+    eq(study.current_card and study.current_card.id, card_id, "o cartão exportado")
+    check(contains(study.card_widget.text, "serendipity"), "frente: " .. tostring(study.card_widget.text))
+    study:onShowOrNext()
+    check(contains(study.card_widget.text, "serendipity") and contains(study.card_widget.text, "luck"),
+        "resposta repete a frente e mostra o verso: " .. tostring(study.card_widget.text))
+    study:onRate("good")
+    eq(tonumber(scalar(data, "SELECT reps FROM cards WHERE id = " .. card_id)), 1, "resposta gravada no banco")
+    study:onClose()
+    eq(av.screen, nil, "fechou")
+
+    -- revisão mantida ao exportar de novo
+    local before = sched(data, card_id)
+    p:getStore():setStatus({ "w:serendipity" }, "ready")
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(1%)")
+    eq(sched(data, card_id), before, "progresso mantido")
+
+    -- sem nada exportado, Estudar abre o estudo como o Anki Viewer abria
+    local data2 = freshEnv()
+    makeVocab(data2, WORDS)
+    for _, m in ipairs({ "vocab2deck/ankiviewer/viewer", "vocab2deck/ankiviewer/db", "vocab2deck/ankiviewer/apkg_import" }) do
+        package.loaded[m] = nil
+    end
+    local p2 = dofile(PLUGIN .. "/main.lua"):new{ ui = ui, path = PLUGIN }
+    UIM.stack = {}
+    p2:studyNow()
+    check(UIM:top() and UIM:top().card_widget, "abriu o estudo sem baralho exportado")
+end)
+
+scenario("configurações sem erro", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
     p:showSettings()
     local menu = LAST_menu
     for _, item in ipairs(menu.item_table) do

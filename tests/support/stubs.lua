@@ -79,6 +79,73 @@ function M.install(opts)
     function Menu:paintTo() end
     function Menu:getSize() return require("ui/geometry"):new{ w = 1, h = 1 } end
     preload("ui/widget/menu", Menu)
+
+    M.installViewerStubs(here)
+end
+
+--[[--
+O que falta para a tela de estudo do Anki Viewer embutido (vocab2deck/ankiviewer)
+rodar sobre os widgets de mentira: Size, Button (com setText/enableDisable),
+ButtonTable (getButtonById), CheckButton, ScrollableContainer, NetworkMgr,
+ffi/archiver, json, Font.sizemap e setText nos widgets de texto.
+--]]
+function M.installViewerStubs(here)
+    local Widget = require("ui/widget/widget")
+    local Geom = require("ui/geometry")
+    local Screen = require("device").screen
+    local function px(n) return Screen:scaleBySize(n) end
+    preload("ui/size", {
+        span = { horizontal_small = px(4), horizontal_default = px(8), vertical_default = px(4),
+                 vertical_large = px(8) },
+        padding = { small = px(2), default = px(5), large = px(10), fullscreen = px(15), button = px(2) },
+        margin = { small = px(2), default = px(5) },
+        border = { thin = px(1), button = px(2), window = px(2) },
+        radius = { button = px(15), window = px(7) },
+        item = { height_default = px(30), height_large = px(40) },
+    })
+
+    local Button = Widget:extend{ __kind = "button", enabled = true }
+    function Button:init()
+        _G.VIEWER_BUTTONS = _G.VIEWER_BUTTONS or {}
+        _G.VIEWER_BUTTONS[self.text or "?"] = self
+        self.dimen = Geom:new{ w = self.width or px(120), h = px(40) }
+    end
+    function Button:setText(t) self.text = t end
+    function Button:enableDisable(e) self.enabled = not not e end
+    function Button:enable() self.enabled = true end
+    function Button:disable() self.enabled = false end
+    function Button:onTapSelectButton() if self.enabled and self.callback then self.callback() end return true end
+    preload("ui/widget/button", Button)
+
+    local ButtonTable = Widget:extend{ __kind = "buttontable" }
+    function ButtonTable:init()
+        self.by_id = {}
+        for _, row in ipairs(self.buttons or {}) do
+            for _, spec in ipairs(row) do
+                local b = Button:new{ text = spec.text, callback = spec.callback, enabled = spec.enabled ~= false }
+                if spec.id then self.by_id[spec.id] = b end
+            end
+        end
+        self.dimen = Geom:new{ w = self.width or Screen:getWidth(), h = px(40) * #(self.buttons or {}) }
+    end
+    function ButtonTable:getButtonById(id) return self.by_id[id] end
+    preload("ui/widget/buttontable", ButtonTable)
+
+    preload("ui/widget/checkbutton", Widget:extend{ __kind = "checkbutton" })
+    local Scroll = require("ui/widget/container/widgetcontainer"):extend{ __kind = "scrollable" }
+    preload("ui/widget/container/scrollablecontainer", Scroll)
+    preload("ui/network/manager", { isOnline = function() return false end })
+    preload("ffi/archiver", { Reader = { new = function() return nil end } })
+    preload("json", dofile(here .. "/json.lua"))
+
+    local Font = require("ui/font")
+    Font.sizemap = Font.sizemap or { cfont = 24, tfont = 26, smallinfofont = 22, infofont = 24 }
+    for _, name in ipairs({ "ui/widget/textwidget", "ui/widget/textboxwidget" }) do
+        local W = require(name)
+        if not rawget(W, "setText") then
+            W.setText = function(self, t) self.text = t; self:init() end
+        end
+    end
 end
 
 function M.reset()

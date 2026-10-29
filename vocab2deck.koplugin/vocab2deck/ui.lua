@@ -54,7 +54,7 @@ end
 -- Erros do banco do Anki Viewer em texto claro.
 function UI.deckError(status)
     if status == "old_schema" then
-        return _("O banco do Anki Viewer é de uma versão antiga.\n\nAbra o Anki Viewer uma vez (ele atualiza o próprio banco) e tente de novo.")
+        return _("O banco do Anki Viewer é de uma versão antiga.\n\nToque em Estudar uma vez (o Anki Viewer embutido atualiza o próprio banco) e tente de novo.")
     end
     return _("O banco do Anki Viewer tem um formato desconhecido. Por segurança, nada será gravado.")
 end

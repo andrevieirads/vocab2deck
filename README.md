@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.6.2
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.0.0
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -13,8 +13,13 @@ As palavras chegam ao Inbox de dois jeitos:
 Cada cartão tem **campos editáveis**, como na janela *Adicionar* do Anki. Os cartões são
 gravados direto no banco do Anki Viewer, sem `.apkg`, sem rede e sem AnkiConnect.
 
-Alvo: Kindle Paperwhite 11ª geração (jailbreak, firmware 5.19.x), KOReader com LuaJIT,
-Anki Viewer 1.4.0.
+**Um plugin só (desde a 3.0.0):** o Anki Viewer 1.4.0 vem embutido em
+`vocab2deck/ankiviewer/`. O botão **Estudar** abre a tela de estudo dele, igual à original
+(*Show answer*, Again / Hard / Good / Easy, Decks, Settings, Import, Delete). Não é preciso
+instalar o `ankiviewer.koplugin`. O banco, a pasta `shared` e as configurações são os mesmos
+do Anki Viewer, então o progresso de quem já estudava nele continua.
+
+Alvo: Kindle Paperwhite 11ª geração (jailbreak, firmware 5.19.x), KOReader com LuaJIT.
 
 ---
 
@@ -79,7 +84,7 @@ Vocabulary Builder ──(ro)──► vocab_reader ──► store (settings/vo
                                                                          │
                                          apkg ─► ankiviewer/shared/Vocab2Deck.apkg (para o Anki)
                                                                          │
-                                                       "Estudar no Anki Viewer" ◄┘
+                                 "Estudar" ─► ankiviewer/viewer (tela de estudo do Anki Viewer) ◄┘
 ```
 
 ### Estrutura de pastas do plugin
@@ -101,6 +106,8 @@ vocab2deck.koplugin/
     ├── ui.lua                diálogos comuns e Configurações
     ├── settings.lua, safe.lua
     ├── screens/              home, items, review, editor, model, export
+    ├── ankiviewer/           Anki Viewer 1.4.0 embutido: viewer.lua (tela de estudo,
+    │                         importação, configurações), db.lua, apkg_import.lua
     ├── ui/                   kit.lua, screen.lua, app.lua (copiados do KR2Anki)
     └── lib/                  u8, ruby, dictparse, sentence, zip, sha1 (copiados do KR2Anki)
 tests/                        testes no computador (não vão para o Kindle)
@@ -113,7 +120,8 @@ koreader/
 ├── settings/vocabulary_builder.sqlite3   Vocabulary Builder (só lido)
 ├── settings/vocab2deck.sqlite3           Inbox, status e campos deste plugin
 ├── settings/vocab2deck.lua               configurações e modelo de campos
-├── ankiviewer/ankiviewer.sqlite3         banco do Anki Viewer (escrito)
+├── ankiviewer/ankiviewer.sqlite3         banco do Anki Viewer (escrito; estudado pela tela embutida)
+├── settings/ankiviewer.lua               configurações da tela de estudo (as mesmas do Anki Viewer)
 ├── ankiviewer/shared/Vocab2Deck.apkg     pacote para o Anki (regravado a cada exportação)
 └── vocab2deck/backups/                   backups automáticos (os 5 mais recentes)
 ```
@@ -133,7 +141,9 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
 - Duas linhas de botões, embaixo dos status:
   - **⌕ Buscar · Sincronizar (N) · Configurações**
-  - **＋ Adicionar · Campos · Estudar** (abre o Anki Viewer)
+  - **＋ Adicionar · Campos · Estudar** (abre a tela de estudo do Anki Viewer embutido;
+    com mais de um baralho do plugin, pergunta qual; sem nenhum exportado, abre no último
+    baralho estudado, como o Anki Viewer abria)
   - *＋ Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
     **Novo cartão** com um **tipo próprio, só com Frente e Verso**:
     - **Frente** é o texto digitado.
@@ -223,7 +233,7 @@ cartões de *＋ Adicionar cartão* têm o tipo fixo Frente/Verso):
 - Durante a gravação: *Exportando 12 de 40…*, atualizado a cada 5 palavras; tocar
   interrompe.
 - Resultado: N cartões novos, palavras sem definição (ficam onde estavam), falhas e
-  backup, com os botões **Estudar no Anki Viewer** · Fechar.
+  backup, com os botões **Estudar** · Fechar.
 
 **＋ Adicionar ao baralho** (no livro):
 - **Selecione um trecho** (toque longo e arraste): o botão aparece no menu da seleção.
@@ -276,7 +286,7 @@ cartões de *＋ Adicionar cartão* têm o tipo fixo Frente/Verso):
 - *Vocabulário → Flashcards: abrir*
 - *revisar o Inbox*
 - *exportar*
-- *estudar no Anki Viewer*
+- *estudar* (abre a tela de estudo do Anki Viewer embutido)
 
 Os ids da versão 1 continuam valendo para gestos já configurados.
 
@@ -342,12 +352,17 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 1. Conecte o Kindle por USB.
 2. Apague a pasta antiga `koreader/plugins/vocab2deck.koplugin` e copie a nova (ou
    descompacte `vocab2deck.koplugin.zip` dentro de `koreader/plugins/`).
-3. Ejete e reinicie o KOReader (menu ▸ Sair ▸ Reiniciar o KOReader).
-4. Ligue um gesto a *Vocabulário → Flashcards: abrir*, já que o Zen UI esconde menus.
-5. Pré-requisitos:
+3. **Apague `koreader/plugins/ankiviewer.koplugin`** (ou desative-o em Ferramentas ▸
+   Gerenciamento de plugins). Ele não é mais necessário. Não apague a pasta
+   `koreader/ankiviewer/`: é ali que ficam os cartões e o progresso, e a tela embutida usa
+   a mesma pasta. Se os dois ficarem ativos, nada quebra (usam o mesmo banco), mas aparecem
+   duas entradas no menu.
+4. Ejete e reinicie o KOReader (menu ▸ Sair ▸ Reiniciar o KOReader).
+5. Ligue um gesto a *Vocabulário → Flashcards: abrir* (e, se quiser, a *estudar*), já que
+   o Zen UI esconde menus.
+6. Pré-requisitos:
    - o Vocabulary Builder ativo;
-   - ao menos um dicionário StarDict;
-   - o Anki Viewer instalado, para *Estudar*.
+   - ao menos um dicionário StarDict.
 
 ---
 
@@ -366,7 +381,7 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
    - Deslize para a direita e mude uma decisão.
    - No resumo, toque em **Exportar (3)**, depois em **Exportar**. Esperado: *3 cartões
      novos adicionados.*
-   - Toque em **Estudar no Anki Viewer**. Esperado: a frente mostra a palavra e a frase;
+   - Toque em **Estudar**. Esperado: abre a tela de estudo do Anki Viewer; a frente mostra a palavra e a frase;
      *Show answer* mostra a frente, o separador e o verso.
 3. **Segunda exportação sem novas:** Exportar mostra **0** e o botão fica desativado. No
    Anki Viewer, continuam 3 cartões e os revisados mantêm os intervalos.
@@ -403,7 +418,7 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
 ### Testes no computador
 
 ```bash
-tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
+tests/run_tests.sh --previews
 ```
 
 - Usa `lua`, `luac` e `python3`.
@@ -411,8 +426,11 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
 - As telas de verdade rodam sobre os widgets de teste do KR2Anki (`tests/support/uistubs.lua`:
   layout, toques e deslizes).
 - Verifica que nenhum texto sai da tela e nenhum conteúdo passa da caixa.
-- Usa o **`ankiviewer_db.lua` real** sobre o mesmo banco, para provar que ele lê os cartões
-  e que revisar, apagar e editar convivem.
+- Usa o **banco real do Anki Viewer embutido** (`vocab2deck/ankiviewer/db.lua`) sobre o
+  mesmo arquivo, para provar que ele lê os cartões e que revisar, apagar e editar convivem.
+- Abre a **tela de estudo real** do Anki Viewer embutido pelo gesto *estudar*: confere o
+  baralho e o cartão, *Show answer* (frente + verso), a nota *Good* gravada no banco e o
+  progresso mantido numa nova exportação; confere também que só existe uma entrada no menu.
 - Com `--previews`, grava SVGs das telas e `tests/previews/index.html`.
 - Abre o `Vocab2Deck.apkg` gerado com o Python (`tests/support/check_apkg.py`) e confere:
   - o zip;
@@ -422,7 +440,7 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 229 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 240 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 
@@ -436,9 +454,11 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
    são detectadas por `PRAGMA table_info`.
 3. **Espaços no contexto:** segui a convenção dos testes do KR2Anki (o contexto inclui os
    espaços em volta da palavra).
-4. **APIs internas do Anki Viewer** para abrir o estudo: `ui.ankiviewer`,
-   `saveSetting("last_deck_id")`, `.screen`, `showLocalStudy()`. Não são públicas, e o
-   esquema está fixado na versão 4.
+4. **Anki Viewer embutido:** é uma cópia da 1.4.0. As únicas mudanças são os `require` (nomes
+   próprios em `vocab2deck/ankiviewer/`) e a entrada de menu "Anki Viewer", que saiu. Uma
+   versão nova do Anki Viewer não chega sozinha: é preciso copiar os arquivos de novo. A
+   tela de estudo foi testada com os widgets de teste, não no Paperwhite. O esquema do banco
+   está fixado na versão 4.
 5. **"Replace" no Anki Viewer** num baralho deste plugin (o nome das configurações ou o título
    de um livro) apaga os cartões. O plugin os vê como apagados e não os recria.
 6. **Atualização sozinha:** com o padrão *Atualizar sozinho*, abrir o plugin pode gravar no
@@ -471,7 +491,8 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
 16. **Validação do pacote:** conferido com o Python e com a consulta do erro, mas não com o
     Anki de verdade. A biblioteca `anki` não pôde ser instalada aqui; o KR2Anki validava o
     mesmo formato com ela. Teste uma importação no Anki antes de confiar no pacote.
-17. **Licenças:** nenhum dos dois zips traz arquivo de licença. Confira nos repositórios
+17. **Licenças:** nenhum dos dois zips traz arquivo de licença (e o Anki Viewer agora vai
+    inteiro dentro deste plugin). Confira nos repositórios
     antes de redistribuir.
 
 ## Créditos
@@ -486,6 +507,8 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
     gestos.
 - **PhraseDeck** (GPLv3): a ideia de criar cartões a partir da seleção no livro. O código não
   foi copiado.
-- **Anki Viewer**: o esquema do banco (para criar um banco idêntico) e o padrão da tela de
-  configurações.
+- **Anki Viewer 1.4.0**: vem inteiro em `vocab2deck/ankiviewer/` (`main.lua` → `viewer.lua`,
+  `ankiviewer_db.lua` → `db.lua`, `ankiviewer_apkg_import.lua` → `apkg_import.lua`), com
+  as mudanças listadas no topo de cada arquivo. Também deu o esquema do banco (para criar
+  um banco idêntico) e o padrão da tela de configurações.
 - O que veio de onde está escrito no topo de cada arquivo.

@@ -4,7 +4,7 @@ Escrita direta no banco interno do Anki Viewer
 
 Por que direto no SQLite e não um .apkg: o Anki Viewer converte cada .apkg
 importado em linhas da tabela `cards` (deck_id, front, back, source_key, …)
-e estuda só a partir desse banco (ver ankiviewer_db.lua). Escrever ali é o
+e estuda só a partir desse banco (ver vocab2deck/ankiviewer/db.lua). Escrever ali é o
 mesmo que o importador dele faz no fim (DB.mergeDeckFromPairs), sem zip,
 sem passar pela tela de mapeamento de campos e sem o risco de "Replace".
 
@@ -34,11 +34,11 @@ Segurança
 local W = {}
 W.__index = W
 
--- Mesma versão de esquema do Anki Viewer 1.4.0 (DB_SCHEMA_VERSION em ankiviewer_db.lua).
+-- Mesma versão de esquema do Anki Viewer 1.4.0 (DB_SCHEMA_VERSION em vocab2deck/ankiviewer/db.lua).
 W.AV_SCHEMA_VERSION = 4
 W.KEEP_BACKUPS = 5
 
--- Copiado de ankiviewer_db.lua (SCHEMA_STATEMENTS + COLUMN_MIGRATIONS +
+-- Copiado de vocab2deck/ankiviewer/db.lua (SCHEMA_STATEMENTS + COLUMN_MIGRATIONS +
 -- POST_MIGRATION_STATEMENTS). Usado só para criar o banco quando o Anki
 -- Viewer ainda nunca foi aberto, para que ele o reconheça como seu.
 local AV_SCHEMA = {
@@ -162,7 +162,7 @@ function W.koreaderFs()
     }
 end
 
--- Conexão no mesmo modo que o Anki Viewer usa (ankiviewer_db.lua openConnection).
+-- Conexão no mesmo modo que o Anki Viewer usa (vocab2deck/ankiviewer/db.lua openConnection).
 function W:_open()
     local conn = self.sq3.open(self.path)
     if conn.set_busy_timeout then conn:set_busy_timeout(3000) end
