@@ -10,8 +10,11 @@ palavra trazida do Vocabulary Builder, como o kr2anki.sqlite3 do KR2Anki.
                  campos do modelo tirados só daquele cartão (extra = 2, side)
 
 Status: inbox (○) → ready (● Revisado) → deck (✓ No baralho); discarded (×).
-Origem (origin): "vocab" (Vocabulary Builder), "book" (botão "＋ Adicionar ao
-baralho" no livro) ou "manual" (botão "＋ Adicionar cartão" no Início).
+Origem (origin): "vocab" (Vocabulary Builder), "highlight" (destaque de um
+livro, ver highlight_reader), "book" (botão "＋ Adicionar ao baralho" no livro)
+ou "manual" (botão "＋ Adicionar cartão" no Início).
+in_vocab / in_highlights: o texto está hoje no Vocabulary Builder / nos
+destaques (as duas primeiras caixas do Início).
 
 Mesmo desenho do kr2anki/db.lua: cada operação abre uma conexão curta, e toda
 escrita é uma transação. O Vocabulary Builder nunca é escrito; o banco do
@@ -72,6 +75,7 @@ local SCHEMA = {
 -- Colunas novas, adicionadas no lugar (sem apagar nada), como o Anki Viewer faz.
 local COLUMN_MIGRATIONS = {
     { "items", "origin", "TEXT NOT NULL DEFAULT 'vocab'" },
+    { "items", "in_highlights", "INTEGER NOT NULL DEFAULT 0" },
 }
 
 local unpack = table.unpack or unpack -- luacheck: ignore
@@ -228,6 +232,58 @@ function Store:syncFromVocab(words, opts)
 end
 
 --[[--
+Traz os destaques dos livros (highlight_reader). Destaques novos entram no
+Inbox; os que já existem só ficam marcados como destaque (status e edições
+ficam). A nota do destaque vira a definição, enquanto a definição for a nota
+(dict = Nota do destaque); trechos longos não passam pelo dicionário.
+@param list highlight_reader.read().highlights
+@param opts { exported = { [vkey] = true }, passage = função(texto) -> true se for trecho longo }
+@treturn table { added, updated, total }
+--]]
+function Store:syncFromHighlights(list, opts)
+    opts = opts or {}
+    local exported = opts.exported or {}
+    local NOTE = require("vocab2deck/highlight_reader").NOTE_DICT
+    local now = self.now()
+    return self:_tx(function(conn)
+        local known = {}
+        for _, r in ipairs(rows(conn, { "vkey", "origin", "dict" }, "SELECT vkey, origin, dict FROM items")) do
+            known[r.vkey] = r
+        end
+        local cleared = {}
+        for _, r in ipairs(rows(conn, { "vkey" }, "SELECT vkey FROM cleared")) do cleared[r.vkey] = true end
+        local res = { added = 0, updated = 0, total = 0 }
+        exec(conn, "UPDATE items SET in_highlights = 0")
+        for _, h in ipairs(list) do
+            local it = known[h.key]
+            if cleared[h.key] and not it then
+                res.skipped_cleared = (res.skipped_cleared or 0) + 1
+            elseif it then
+                exec(conn, "UPDATE items SET in_highlights = 1 WHERE vkey = ?", h.key)
+                if it.origin == "highlight" then
+                    exec(conn, "UPDATE items SET book = ? WHERE vkey = ?", h.book, h.key)
+                    if it.dict == NOTE and h.note then
+                        exec(conn, "UPDATE items SET definition = ? WHERE vkey = ?", h.note, h.key)
+                    end
+                end
+                res.updated = res.updated + 1
+                res.total = res.total + 1
+            else
+                local passage = opts.passage and opts.passage(h.word)
+                exec(conn, "INSERT INTO items (vkey, word, book, highlight, created, status, looked_up, definition, "
+                    .. "dict, in_vocab, in_highlights, origin, added_at, updated_at) "
+                    .. "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'highlight', ?, ?)",
+                    h.key, h.word, h.book, h.word, h.created or now, exported[h.key] and "deck" or "inbox",
+                    (h.note or passage) and 1 or 0, h.note, h.note and NOTE or nil, now, now)
+                res.added = res.added + 1
+                res.total = res.total + 1
+            end
+        end
+        return res
+    end)
+end
+
+--[[--
 Item vindo do livro (botão "＋ Adicionar ao baralho"). Se o texto já existe
 (ex.: a palavra veio do Vocabulary Builder), não duplica.
 @param c { word, prev, next, highlight, book, origin ("book" | "manual") }
@@ -288,13 +344,22 @@ function Store:counts()
     end)
 end
 
+-- Quantos itens estão hoje no Vocabulary Builder e nos destaques (qualquer status).
+function Store:sourceCounts()
+    return self:_read(function(conn)
+        local r = rows(conn, { "vocab", "highlights" },
+            "SELECT coalesce(sum(in_vocab), 0), coalesce(sum(in_highlights), 0) FROM items")[1]
+        return { vocab = r and r.vocab or 0, highlights = r and r.highlights or 0 }
+    end)
+end
+
 local ORDER = {
     newest = "coalesce(created, 0) DESC, vkey",
     oldest = "coalesce(created, 0) ASC, vkey",
     az = "word COLLATE NOCASE ASC",
 }
 
--- filter = { statuses = { inbox = true, … }, search = "texto" }
+-- filter = { statuses = { inbox = true, … }, source = "vocab" | "highlights", search = "texto" }
 local function where(filter)
     local w, args = { "1 = 1" }, {}
     filter = filter or {}
@@ -305,6 +370,8 @@ local function where(filter)
         end
         w[#w + 1] = "status IN (" .. table.concat(list, ",") .. ")"
     end
+    if filter.source == "vocab" then w[#w + 1] = "in_vocab = 1" end
+    if filter.source == "highlights" then w[#w + 1] = "in_highlights = 1" end
     if filter.search and filter.search:match("%S") then
         local q = "%" .. filter.search:lower():gsub("^%s+", ""):gsub("%s+$", ""):gsub("[%%_\\]", "\\%0") .. "%"
         w[#w + 1] = "(lower(word) LIKE ? ESCAPE '\\' OR lower(coalesce(definition, '')) LIKE ? ESCAPE '\\' "

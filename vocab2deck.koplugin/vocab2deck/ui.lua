@@ -368,6 +368,12 @@ function UI.showSettings(plugin, on_close)
             callback = toggle("only_unlearned", _("Vale para as próximas palavras que chegarem ao Inbox.")),
         },
         {
+            text = _("Trazer os destaques dos livros"),
+            keep_menu_open = true,
+            mandatory_func = function() return yesNo(s:get("import_highlights")) end,
+            callback = toggle("import_highlights", _("Ao tocar em Sincronizar, os destaques dos livros do histórico chegam ao Inbox.")),
+        },
+        {
             text = _("Aprendida = acertos seguidos ≥"),
             keep_menu_open = true,
             mandatory_func = function() return tostring(s:get("learned_streak")) end,

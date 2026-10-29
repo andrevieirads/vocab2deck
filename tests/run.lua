@@ -254,7 +254,7 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     check(has("3 palavras novas vieram do Vocabulary Builder"), "aviso das palavras novas")
     -- ordem do Início: hoje · funil · Revisar / Exportar · baralhos · barra de baixo
     local order, want = {}, { "VOCABULÁRIO", "Flashcards", "PARA ESTUDAR HOJE", "Estudar agora", "DO KINDLE PARA O ANKI",
-                              "Inbox", "Revisados", "No baralho", "Descartados", "Revisar (3)", "Exportar (0)",
+                              "Vocabulário", "Destaques", "Inbox", "Revisados", "No baralho", "Descartados", "Revisar (3)", "Exportar (0)",
                               "BARALHOS", "Adicionar", "Buscar", "Sincronizar", "Importar" }
     local set = {}
     for _, w in ipairs(want) do set[w] = true end
@@ -787,6 +787,111 @@ scenario("Sincronizar com o Anki Viewer: recria, atualiza e move sem mexer no ag
     eq(sched(data, qid), before, "agendamento intacto")
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards c JOIN decks d ON d.id = c.deck_id WHERE d.name = 'Meu Vocabulário'")), 3, "todos no baralho novo")
     eq(checkApkg(data .. "/ankiviewer/shared/Vocab2Deck.apkg").notes, "3", "pacote regravado")
+end)
+
+scenario("Sincronizar: Vocabulary Builder e destaques dos livros vão para o Inbox; seis caixas", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local A, B, C = "/mnt/us/books/Hamlet.epub", "/mnt/us/books/Velho.mobi", "/mnt/us/books/Sem destaques.epub"
+    Stubs.history = { A, B, C }
+    Stubs.sidecars[A] = {
+        doc_props = { title = "Hamlet" },
+        annotations = {
+            { drawer = "lighten", text = "To be,  or not to be,\nthat is the question", note = "Hamlet, ato 3",
+              datetime = "2024-03-01 10:00:00" },
+            { text = "marcador da página 3", datetime = "2024-03-01 10:01:00" }, -- marcador: fica de fora
+            { drawer = "underscore", text = "serendipity", datetime = "2024-03-02 10:00:00" },
+        },
+    }
+    -- formato antigo (por página), sem doc_props: título pelo nome do arquivo
+    Stubs.sidecars[B] = { highlight = { [12] = { { text = "quixotic dreamer", datetime = "2023-01-01 00:00:00" } } } }
+    Stubs.sidecars[C] = { annotations = {} }
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:onVocab2DeckOpen()
+    eq(p:getStore():sourceCounts().vocab, 3, "Vocabulário: as 3 do Vocabulary Builder")
+    eq(p:getStore():sourceCounts().highlights, 0, "destaques só chegam pelo Sincronizar")
+    check(has("Vocabulário") and has("Destaques") and has("Descartados"), "seis caixas: " .. screenText())
+    tapText("^Sincronizar$")
+    check(contains(info(), "Vocabulary Builder: 3 palavras, 0 novas no Inbox"), "aviso do Vocabulary Builder: " .. tostring(info()))
+    check(contains(info(), "Destaques: 3 em 2 livros, 2 novos no Inbox"), "aviso dos destaques: " .. tostring(info()))
+    check(not contains(info(), "no baralho sincronizadas"), "sem No baralho, o Anki Viewer não é tocado")
+    UIM:close(LAST_infomessage)
+    local st = p:getStore()
+    eq(st:counts().inbox, 5, "3 palavras + 2 destaques no Inbox")
+    eq(st:sourceCounts().highlights, 3, "serendipity é palavra e destaque")
+    local ham = st:get("w:to be, or not to be, that is the question")
+    check(ham ~= nil, "destaque com espaços e quebra de linha limpos")
+    eq(ham and ham.book, "Hamlet", "livro do destaque")
+    eq(ham and ham.definition, "Hamlet, ato 3", "a nota vira a definição")
+    eq(ham and ham.looked_up, 1, "trecho com nota não vai ao dicionário")
+    local old = st:get("w:quixotic dreamer")
+    eq(old and old.book, "Velho", "título pelo nome do arquivo")
+    eq(old and old.looked_up, 0, "trecho curto ainda passa pelo dicionário")
+    eq(st:get("w:serendipity").origin, "vocab", "palavra que já existia não muda de origem")
+    check(has("2 destaques novos vieram dos livros"), "aviso no Início: " .. screenText())
+    noOffscreen("início com seis caixas")
+    snap("16_inicio_seis_caixas")
+
+    tapText("^Destaques$")
+    eq(UIM:top().total, 3, "lista dos destaques")
+    check(has("quixotic dreamer"), "destaque na lista: " .. screenText())
+    UIM:top():onClose()
+    -- Vocabulário: abre o Vocabulary Builder original do KOReader
+    local depth = #UIM.stack
+    tapText("^Vocabulário$")
+    check(contains(info(), "não está ativo"), "sem o plugin do Vocabulary Builder: aviso: " .. tostring(info()))
+    UIM:close(LAST_infomessage)
+    local vb = { shown = 0 }
+    function vb:onShowVocabBuilder() self.shown = self.shown + 1 end
+    p.ui.vocabulary_builder = vb
+    _G.LAST_infomessage = nil
+    tapText("^Vocabulário$")
+    eq(vb.shown, 1, "Vocabulário abre o Vocabulary Builder")
+    eq(#UIM.stack, depth, "o Início fica embaixo, sem lista do plugin")
+    p.ui.vocabulary_builder = nil
+    -- sem o objeto do plugin: pelo evento da ação de gesto
+    local events = {}
+    p.ui.handleEvent = function(_, ev) events[#events + 1] = ev.name or ev.handler; return true end
+    tapText("^Vocabulário$")
+    check(#events == 1 and tostring(events[1]):find("ShowVocabBuilder"), "evento ShowVocabBuilder: " .. tostring(events[1]))
+    check(info() == nil, "sem aviso quando abre")
+    p.ui.handleEvent = nil
+
+    -- de novo: nada duplica; destaque apagado no livro sai da caixa, mas o item fica
+    table.remove(Stubs.sidecars[A].annotations, 3)
+    tapText("^Sincronizar$")
+    check(contains(info(), "Destaques: 2 em 2 livros, 0 novos no Inbox"), "segunda vez: " .. tostring(info()))
+    UIM:close(LAST_infomessage)
+    eq(st:counts().inbox, 5, "nada duplicado")
+    eq(st:sourceCounts().highlights, 2, "serendipity não é mais destaque")
+    -- limpo nos Descartados não volta
+    st:setStatus({ "w:quixotic dreamer" }, "discarded")
+    st:clear({ "w:quixotic dreamer" })
+    tapText("^Sincronizar$")
+    UIM:close(LAST_infomessage)
+    eq(st:get("w:quixotic dreamer"), nil, "limpo não volta pelos destaques")
+    -- desligado nas configurações
+    p.settings:set("import_highlights", false)
+    Stubs.sidecars[B].highlight[13] = { { text = "outro trecho", datetime = "2023-01-02 00:00:00" } }
+    tapText("^Sincronizar$")
+    check(not contains(info(), "Destaques:"), "desligado: " .. tostring(info()))
+    eq(st:get("w:outro trecho"), nil, "desligado: nada vem dos livros")
+end)
+
+scenario("destaques do livro aberto: os da memória valem mais que o .sdr", function()
+    freshEnv()
+    local file = "/mnt/us/books/Dom Quixote.epub"
+    Stubs.history = { file }
+    Stubs.sidecars[file] = { annotations = { { drawer = "lighten", text = "velho", datetime = "2024-01-01 00:00:00" } } }
+    local reader = fakeReader()
+    reader.annotation = { annotations = {
+        { drawer = "lighten", text = "velho", datetime = "2024-01-01 00:00:00" },
+        { drawer = "lighten", text = "ainda não gravado", datetime = "2024-01-02 00:00:00" },
+    } }
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    local res = p:syncHighlights()
+    eq(res.added, 2, "os dois da memória")
+    eq(p:getStore():get("w:ainda não gravado").book, "Dom Quixote", "título do livro aberto")
 end)
 
 scenario("destaque com só Notas no verso: lista mostra o verso e exporta; campos: remover, renomear, re-adicionar", function()

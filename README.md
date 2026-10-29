@@ -1,12 +1,13 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.2.0
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.3.0
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
 
 **Inbox → Revisar (uma palavra por tela) → Revisado → Exportar → No baralho**
 
-As palavras chegam ao Inbox de dois jeitos:
+As palavras chegam ao Inbox de três jeitos:
 - pelo **Vocabulary Builder**;
+- pelos **destaques** (highlights) dos livros, ao tocar em **Sincronizar** (desde a 3.3.0);
 - direto do livro, com **＋ Adicionar ao baralho** na seleção de texto ou no popup do
   dicionário (ideia do PhraseDeck).
 
@@ -97,6 +98,7 @@ vocab2deck.koplugin/
 ├── main.lua                  plugin: menu, gestos, sincronização, exportação, estudo
 └── vocab2deck/
     ├── vocab_reader.lua      lê o Vocabulary Builder (só leitura, colunas detectadas)
+    ├── highlight_reader.lua  lê os destaques dos livros do histórico (só leitura)
     ├── capture.lua           "＋ Adicionar ao baralho" na seleção e no popup do dicionário
     ├── store.lua             banco próprio: itens, status, sentidos, campos
     ├── template.lua          modelo de campos e montagem da frente/verso
@@ -120,6 +122,7 @@ tests/                        testes no computador (não vão para o Kindle)
 ```
 koreader/
 ├── settings/vocabulary_builder.sqlite3   Vocabulary Builder (só lido)
+├── settings/history.lua + <livro>.sdr/   histórico e destaques de cada livro (só lidos)
 ├── settings/vocab2deck.sqlite3           Inbox, status e campos deste plugin
 ├── settings/vocab2deck.lua               configurações e modelo de campos
 ├── ankiviewer/ankiviewer.sqlite3         banco do Anki Viewer (escrito; estudado pela tela embutida)
@@ -143,8 +146,16 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   todos, se nada foi exportado ainda), "no baralho X" ou "em N baralhos", e o botão
   **Estudar agora**. Ele abre a tela de estudo nos baralhos deste plugin (com mais de um,
   pergunta qual; sem nenhum exportado, abre no último baralho estudado).
-- **Do Kindle para o Anki:** ○ Inbox › ● Revisados › ✓ No baralho | × Descartados, com as
-  contagens (zero fica em cinza). Tocar num deles abre a lista daquele status.
+- **Do Kindle para o Anki:** seis caixas, *Vocabulário | Destaques › ○ Inbox › ● Revisados ›
+  ✓ No baralho | × Descartados*, com as contagens (zero fica em cinza).
+  - **Vocabulário** e **Destaques** são as fontes: quantos itens do plugin estão hoje no
+    Vocabulary Builder e nos destaques dos livros, em qualquer status. Uma palavra que é
+    as duas coisas conta nas duas.
+  - Tocar em **Vocabulário** abre a tela original do **Vocabulary Builder** do KOReader
+    (revisão, filtro por livro, apagar palavras, tudo como no menu dele). Ao fechá-la, você
+    volta ao Início. Se o plugin do Vocabulary Builder estiver desativado, aparece um aviso.
+  - Tocar nas outras caixas abre a lista delas (em *Destaques*, cada linha mostra o status:
+    ○ ● ✓ ×).
 - Logo abaixo:
   - os avisos (palavras novas que vieram do Vocabulary Builder, cartões apagados, erros), ou
     *Nenhuma palavra nova para revisar.*;
@@ -159,7 +170,7 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
     direita. Se não couberem todos, a última linha é *Todos os baralhos (N)…*.
 - **Barra de baixo** (ícones desenhados pelo plugin, sem depender da fonte do aparelho):
   **Adicionar · Buscar · Sincronizar · Importar**. Sincronizar mostra numa bolinha quantos
-  itens estão no baralho e fica cinza quando não há nenhum.
+  itens estão no baralho.
   - *Importar* abre a lista de `.apkg` da pasta `koreader/ankiviewer/shared` (o *Import* do
     Anki Viewer, com o mapeamento de campos e Merge / Replace).
   - *Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
@@ -170,7 +181,24 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   - Esse tipo não depende da tela Campos: mudar o modelo não afeta esses cartões.
   - No editor deles, + Campo e − Campo valem só para campos criados naquele cartão.
   - *Salvar no Inbox* guarda o cartão; *Cancelar* descarta.
-- **Sincronizar** manda de novo os itens ✓ No baralho.
+- **Sincronizar** faz a varredura completa e junta tudo no plugin, nesta ordem:
+  1. lê o **Vocabulary Builder** (palavras novas vão para o Inbox);
+  2. lê os **destaques de todos os livros do histórico** (destaques novos vão para o Inbox);
+  3. se houver itens ✓ No baralho, manda-os de novo para o Anki Viewer (abaixo).
+
+  Um aviso resume: *Vocabulary Builder: N palavras, X novas no Inbox*, *Destaques: N em M
+  livros, Y novos no Inbox* e o resultado do baralho.
+- Destaques, em detalhe:
+  - Vêm do arquivo `.sdr` de cada livro (só lido) e, no livro aberto, da memória (inclui os
+    que ainda não foram gravados). Marcadores de página ficam de fora.
+  - O texto do destaque vira a frente; o livro é o título do livro (ou o nome do arquivo).
+  - A **nota** do destaque vira a definição. Trechos com mais de 3 palavras não passam pelo
+    dicionário; os curtos, sim, como as palavras.
+  - Destaque que já está no plugin (ex.: a mesma palavra do Vocabulary Builder) não duplica.
+  - Destaque apagado no livro sai da caixa *Destaques*, mas o item fica onde está.
+  - Itens limpos nos Descartados não voltam.
+  - Desligue em *Configurações ▸ Trazer os destaques dos livros*.
+- O envio dos ✓ No baralho:
   - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
     agendamento não muda**.
   - Cartões que sumiram do Anki Viewer são criados de novo.
@@ -341,6 +369,9 @@ Os ids da versão 1 continuam valendo para gestos já configurados.
 
 - **Abrir o plugin** lê o Vocabulary Builder (rápido, sem dicionário). Palavras novas entram
   no **Inbox**; as que já existem só atualizam o contexto, e status e edições ficam.
+- **Sincronizar** lê também os destaques de todos os livros do histórico (o histórico pode
+  ter muitos livros, por isso não é feito a cada abertura). Mesmas regras: novos no Inbox,
+  status e edições dos que já existem ficam.
 - **Busca no dicionário:** só quando a palavra aparece na revisão (uma por tela), ou na
   exportação para quem ainda não foi buscado.
 - **Chave estável:** a palavra em minúsculas (`w:<palavra>`). No Anki Viewer,
@@ -448,7 +479,15 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
      livro, e o verso mostra a frente, o traço e o verso.
    - Edite um cartão no plugin, feche o plugin e importe o pacote de novo. Esperado: a nota
      é atualizada e não aparece uma segunda.
-7. **Extras**
+7. **Destaques**
+   - Faça 2 destaques num livro (um com nota), feche o livro e toque em **Sincronizar** no
+     Início. Esperado: *Destaques: 2 em 1 livros, 2 novos no Inbox*; as caixas *Destaques* e
+     *Inbox* sobem; o destaque com nota já tem a nota como definição na revisão.
+   - Toque em **Sincronizar** de novo. Esperado: *0 novos*; nada duplica.
+   - Toque na caixa **Vocabulário**. Esperado: abre o Vocabulary Builder do KOReader;
+     fechá-lo volta ao Início. Se você apagou palavras nele, toque em Sincronizar para a
+     contagem acompanhar.
+8. **Extras**
    - Apague um cartão no Anki Viewer: ele não volta; *Recriar cartões apagados* o traz de volta.
    - Ative **Os dois sentidos**: Exportar mostra *+ N cartões inversos*.
    - Toque na tela durante uma exportação longa: ela para e grava o que já foi processado.
@@ -486,13 +525,17 @@ tests/run_tests.sh --previews
   dá as opções, *Apagar baralho* apaga), *Todos os baralhos (N)…* quando não cabem,
   *Importar*, *‹ Voltar* / *Fechar* na tela de estudo e as opções de estudo nas
   Configurações gravadas nas chaves do Anki Viewer.
-- Resultado atual: 280 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 314 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 
 ---
 
 ## 7. Riscos e pontos não confirmados pelo código
+
+**Destaques (3.3.0):** o formato `annotations` (KOReader 2024.04+) e o antigo
+`highlight` por página são lidos com `DocSettings` e `ReadHistory`. Só foi testado com
+metadados simulados; livros fora do histórico não são lidos.
 
 1. **"Aprendida" = `streak_count` ≥ N** é definição minha; a coluna é detectada e, sem ela,
    o filtro é desligado com aviso.

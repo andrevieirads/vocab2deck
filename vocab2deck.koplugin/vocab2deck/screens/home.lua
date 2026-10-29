@@ -3,11 +3,13 @@ Início: o que estudar hoje, por onde as palavras passam e os baralhos.
 
 * Cabeçalho "VOCABULÁRIO / Flashcards", com ⋮ (Campos · Importar · Configurações).
 * PARA ESTUDAR HOJE: cartões para estudar nos baralhos deste plugin e "Estudar agora".
-* DO KINDLE PARA O ANKI: ○ Inbox → ● Revisados → ✓ No baralho | × Descartados
-  (cada um abre a lista); avisos; Revisar (N) / Exportar (N) quando há o que fazer;
-  "Atualizar N cartões alterados…".
+* DO KINDLE PARA O ANKI: Vocabulário | Destaques → ○ Inbox → ● Revisados →
+  ✓ No baralho | × Descartados (Vocabulário abre o Vocabulary Builder do
+  KOReader; os outros abrem a lista); avisos; Revisar (N) /
+  Exportar (N) quando há o que fazer; "Atualizar N cartões alterados…".
 * BARALHOS: todos os do Anki Viewer embutido (tocar estuda; toque longo: opções).
-* Barra de baixo: Adicionar · Buscar · Sincronizar · Importar.
+* Barra de baixo: Adicionar · Buscar · Sincronizar (Vocabulary Builder +
+  destaques -> Inbox; No baralho -> Anki Viewer) · Importar.
 Em paisagem, os baralhos vão para uma coluna à direita.
 O kit e o padrão das telas são os do KR2Anki (kr2anki/screens/home.lua).
 --]]
@@ -31,6 +33,7 @@ function Home:loadData()
     -- antes de contar: leva para o Anki Viewer o que mudou nos cartões já no baralho
     self.host:autoUpdate()
     self.counts = self.host:getStore():counts()
+    self.sources = self.host:getStore():sourceCounts()
     self.pending = self.host:pendingChanges()
     self.decks = self.host:allDecks()
 end
@@ -46,6 +49,14 @@ function Home:browse(status)
     })
 end
 
+-- Lista de uma fonte (Destaques), com o status de cada item.
+function Home:browseSource(source)
+    self.app:open("vocab2deck/screens/items", {
+        filter = { source = source },
+        title = source == "vocab" and _("Vocabulary Builder") or _("Destaques"),
+    })
+end
+
 -- Avisos curtos: o que a última leitura do Vocabulary Builder trouxe, erros, pendências.
 function Home:notes()
     local out = {}
@@ -54,6 +65,12 @@ function Home:notes()
         out[#out + 1] = s.error
     elseif s and s.added > 0 then
         out[#out + 1] = T(_("○ %1 palavras novas vieram do Vocabulary Builder."), s.added)
+    end
+    local hl = self.host.last_highlights
+    if hl and hl.error then
+        out[#out + 1] = hl.error
+    elseif hl and hl.added > 0 then
+        out[#out + 1] = T(_("○ %1 destaques novos vieram dos livros."), hl.added)
     end
     local a = self.host.last_auto
     if a and a.updated > 0 then
@@ -149,23 +166,36 @@ function Home:todaySection(cw)
     }
 end
 
--- DO KINDLE PARA O ANKI: os quatro status lado a lado, com setas de fluxo.
+-- DO KINDLE PARA O ANKI: as duas fontes e os quatro status lado a lado, com setas de fluxo.
 function Home:funnelSection(cw)
-    local c = self.counts
+    local c, src = self.counts, self.sources
     local border = Kit.dp(2)
     local h = Kit.dp(96)
-    local sep_w = Kit.dp(12)
+    local sep_w = Kit.dp(10)
     local inner = cw - 2 * border
-    local cell_w = math.floor((inner - 3 * sep_w) / 4)
-    local function cell(status, label, value)
+    local cell_w = math.floor((inner - 5 * sep_w) / 6)
+    local function cell(label, value, on_tap)
         local zero = value == 0
+        local font = zero and Kit.ui or Kit.uiBold
+        -- nome que não cabe na caixa: letra um pouco menor antes de cortar
+        local size = Kit.SIZE.tiny - 1
+        if Kit.text(label, font(size), {}):getSize().w > cell_w - Kit.dp(4) then size = size - 2 end
         local group = VerticalGroup:new{
             align = "center",
-            Kit.text(tostring(value), Kit.uiBold(Kit.SIZE.title + 10), { fgcolor = zero and Kit.GREY_LIGHT or Kit.BLACK }),
-            Kit.text(label, zero and Kit.ui(Kit.SIZE.tiny) or Kit.uiBold(Kit.SIZE.tiny),
-                { fgcolor = zero and Kit.GREY_DARK or Kit.BLACK, max_width = cell_w - Kit.dp(4) }),
+            Kit.text(tostring(value), Kit.uiBold(Kit.SIZE.title + 6), { fgcolor = zero and Kit.GREY_LIGHT or Kit.BLACK,
+                max_width = cell_w }),
+            Kit.text(label, font(size), { fgcolor = zero and Kit.GREY_DARK or Kit.BLACK, max_width = cell_w }),
         }
-        return Kit.tap(Kit.box(cell_w, h, group), function() self:browse(status) end)
+        return Kit.tap(Kit.box(cell_w, h, group), on_tap)
+    end
+    local function status(st, label)
+        return cell(label, c[st], function() self:browse(st) end)
+    end
+    local function source(key, label)
+        return cell(label, src[key], function()
+            -- Vocabulário abre o Vocabulary Builder original; Destaques, a lista do plugin
+            if key == "vocab" then self.host:openVocabBuilder() else self:browseSource(key) end
+        end)
     end
     local function sep(arrow)
         local bar = math.floor((h - Kit.dp(24)) / 2) - Kit.dp(10)
@@ -176,17 +206,19 @@ function Home:funnelSection(cw)
             align = "center",
             Kit.vline(bar, Kit.dp(1), Kit.GREY_LIGHT),
             Kit.vspan(Kit.dp(4)),
-            Kit.icon("chevron_right", Kit.dp(12)),
+            Kit.icon("chevron_right", Kit.dp(9)),
             Kit.vspan(Kit.dp(4)),
             Kit.vline(bar, Kit.dp(1), Kit.GREY_LIGHT),
         })
     end
     local row = HorizontalGroup:new{
         align = "center",
-        cell("inbox", _("Inbox"), c.inbox), sep(true),
-        cell("ready", _("Revisados"), c.ready), sep(true),
-        cell("deck", _("No baralho"), c.deck), sep(false),
-        cell("discarded", _("Descartados"), c.discarded),
+        source("vocab", _("Vocabulário")), sep(false),
+        source("highlights", _("Destaques")), sep(true),
+        status("inbox", _("Inbox")), sep(true),
+        status("ready", _("Revisados")), sep(true),
+        status("deck", _("No baralho")), sep(false),
+        status("discarded", _("Descartados")),
     }
     return VerticalGroup:new{
         align = "left",
@@ -292,7 +324,7 @@ function Home:bottomBar(w)
         local icon = Kit.icon(kind, Kit.dp(24), { color = color })
         local top = icon
         if opts.badge and opts.badge > 0 then
-            top = HorizontalGroup:new{ align = "top", Kit.hspan(Kit.dp(14)), icon, Kit.badge(opts.badge, Kit.SIZE.tiny - 2) }
+            top = HorizontalGroup:new{ align = "top", Kit.hspan(Kit.dp(14)), icon, Kit.badge(opts.badge, Kit.SIZE.tiny - 1) }
         end
         local group = VerticalGroup:new{
             align = "center",
@@ -309,8 +341,7 @@ function Home:bottomBar(w)
             align = "center",
             item("plus", _("Adicionar"), function() require("vocab2deck/capture").manual(self.host) end),
             item("search", _("Buscar"), function() self.host:askSearch(self.app) end),
-            item("sync", _("Sincronizar"), function() self.host:syncDeck() end,
-                { badge = self.counts.deck, enabled = self.counts.deck > 0 }),
+            item("sync", _("Sincronizar"), function() self.host:syncAll() end, { badge = self.counts.deck }),
             item("import", _("Importar"), function() self.host:importApkg() end),
         },
     }
@@ -325,7 +356,7 @@ function Home:build(w, h)
     local content
     if w > h then
         -- paisagem: baralhos numa coluna à direita
-        local left_w = math.floor((cw - 2 * Kit.PAD) * 0.55)
+        local left_w = math.floor((cw - 2 * Kit.PAD) * 0.6)
         local col = cw - 2 * Kit.PAD - left_w
         local left = VerticalGroup:new{
             align = "left",
