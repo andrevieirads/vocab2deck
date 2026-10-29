@@ -4,7 +4,7 @@ Escrita direta no banco interno do Anki Viewer
 
 Por que direto no SQLite e não um .apkg: o Anki Viewer converte cada .apkg
 importado em linhas da tabela `cards` (deck_id, front, back, source_key, …)
-e estuda só a partir desse banco (ver ankiviewer_db.lua). Escrever ali é o
+e estuda só a partir desse banco (ver vocab2deck/ankiviewer/db.lua). Escrever ali é o
 mesmo que o importador dele faz no fim (DB.mergeDeckFromPairs), sem zip,
 sem passar pela tela de mapeamento de campos e sem o risco de "Replace".
 
@@ -34,11 +34,11 @@ Segurança
 local W = {}
 W.__index = W
 
--- Mesma versão de esquema do Anki Viewer 1.4.0 (DB_SCHEMA_VERSION em ankiviewer_db.lua).
+-- Mesma versão de esquema do Anki Viewer 1.4.0 (DB_SCHEMA_VERSION em vocab2deck/ankiviewer/db.lua).
 W.AV_SCHEMA_VERSION = 4
 W.KEEP_BACKUPS = 5
 
--- Copiado de ankiviewer_db.lua (SCHEMA_STATEMENTS + COLUMN_MIGRATIONS +
+-- Copiado de vocab2deck/ankiviewer/db.lua (SCHEMA_STATEMENTS + COLUMN_MIGRATIONS +
 -- POST_MIGRATION_STATEMENTS). Usado só para criar o banco quando o Anki
 -- Viewer ainda nunca foi aberto, para que ele o reconheça como seu.
 local AV_SCHEMA = {
@@ -162,7 +162,7 @@ function W.koreaderFs()
     }
 end
 
--- Conexão no mesmo modo que o Anki Viewer usa (ankiviewer_db.lua openConnection).
+-- Conexão no mesmo modo que o Anki Viewer usa (vocab2deck/ankiviewer/db.lua openConnection).
 function W:_open()
     local conn = self.sq3.open(self.path)
     if conn.set_busy_timeout then conn:set_busy_timeout(3000) end
@@ -525,6 +525,32 @@ function W:ourDecks()
                 .. "WHERE d.id IN (SELECT DISTINCT deck_id FROM vocab2deck_cards) "
                 .. "GROUP BY d.id, d.name ORDER BY d.name COLLATE NOCASE;", self.now())) do
             out[#out + 1] = { id = num(r[1]), name = r[2], cards = num(r[3]) or 0, due = num(r[4]) or 0 }
+        end
+        return out
+    end)
+end
+
+--[[--
+Todos os baralhos do Anki Viewer (os deste plugin e os importados de .apkg),
+para a lista do Início. Só lê; sem banco, lista vazia (não cria nada).
+@treturn table { {id, name, cards, due, ours} }
+--]]
+function W:allDecks()
+    if self:check() ~= "ok" then return {} end
+    return self:_with(function(conn)
+        local ours = {}
+        if tableExists(conn, "vocab2deck_cards") then
+            for _, r in ipairs(rowsN(conn, 1, "SELECT DISTINCT deck_id FROM vocab2deck_cards;")) do
+                ours[num(r[1])] = true
+            end
+        end
+        local out = {}
+        for _, r in ipairs(rowsN(conn, 4, "SELECT d.id, d.name, COUNT(c.id), "
+                .. "SUM(CASE WHEN c.due <= ? THEN 1 ELSE 0 END) "
+                .. "FROM decks d LEFT JOIN cards c ON c.deck_id = d.id "
+                .. "GROUP BY d.id, d.name ORDER BY d.name COLLATE NOCASE;", self.now())) do
+            local id = num(r[1])
+            out[#out + 1] = { id = id, name = r[2], cards = num(r[3]) or 0, due = num(r[4]) or 0, ours = ours[id] == true }
         end
         return out
     end)

@@ -1,26 +1,27 @@
 --[[--
 Vocabulário → Flashcards (vocab2deck): traz as palavras do Vocabulary Builder
 do KOReader para um Inbox, deixa revisar e editar cada cartão (fluxo do
-KR2Anki, campos como no "Adicionar" do Anki) e grava os revisados direto no
-banco do Anki Viewer.
+KR2Anki, campos como no "Adicionar" do Anki), grava os revisados direto no
+banco do Anki Viewer e estuda os cartões na tela do Anki Viewer, que vem
+embutida (vocab2deck/ankiviewer): não é preciso instalar o Anki Viewer.
 
 Entradas
 * Menu principal ▸ Ferramentas ▸ "Vocabulário → Flashcards"
 * Livro: "＋ Adicionar ao baralho" no menu da seleção e no popup do dicionário
 * Ações de gesto (Gerenciador de gestos ▸ Geral):
-    abrir · revisar o Inbox · exportar · estudar no Anki Viewer
+    abrir · revisar o Inbox · exportar · estudar
 
 Fluxo
   vocab_reader (Vocabulary Builder, só leitura) -> store (Inbox, banco próprio)
     -> screens/review + screens/editor (revisar, escolher o sentido, editar campos)
     -> screens/export -> sync.plan -> dict_lookup -> deck_writer (backup + transação)
     -> apkg: ankiviewer/shared/Vocab2Deck.apkg (Vocab2Deck::Livro), para o Anki
-    -> "Estudar no Anki Viewer" abre o Anki Viewer no baralho
+    -> "Estudar" abre a tela de estudo do Anki Viewer embutido no baralho
 
 Reaproveita código do KR2Anki (leitura do Vocabulary Builder, busca no
 dicionário, limpeza de definições, recorte da frase, kit de interface e o
-desenho das telas) e segue o esquema de banco e a API de plugin do Anki
-Viewer 1.4.0. Créditos no README.md.
+desenho das telas) e traz o Anki Viewer 1.4.0 inteiro (estudo, importação de
+.apkg, configurações), com o mesmo banco. Créditos no README.md.
 
 @module koplugin.vocab2deck
 --]]
@@ -54,6 +55,12 @@ require("vocab2deck/screens/review")
 require("vocab2deck/screens/editor")
 require("vocab2deck/screens/model")
 require("vocab2deck/screens/export")
+-- Anki Viewer embutido. Se ele não carregar, o resto do plugin continua funcionando.
+local viewer_ok, AnkiViewer = pcall(require, "vocab2deck/ankiviewer/viewer")
+if not viewer_ok then
+    require("logger").err("vocab2deck: Anki Viewer embutido não carregou:", AnkiViewer)
+    AnkiViewer = nil
+end
 
 local Vocab2Deck = WidgetContainer:extend{
     name = "vocab2deck",
@@ -113,7 +120,7 @@ function Vocab2Deck:onDispatcherRegisterActions()
     })
     Dispatcher:registerAction("vocab2deck_review", {
         category = "none", event = "Vocab2DeckReview", general = true, separator = true,
-        title = _("Vocabulário → Flashcards: estudar no Anki Viewer"),
+        title = _("Vocabulário → Flashcards: estudar"),
     })
 end
 
@@ -724,35 +731,73 @@ function Vocab2Deck:forgetDeleted()
     end
 end
 
--- Estudo no Anki Viewer --------------------------------------------------------------
+-- Estudo (Anki Viewer embutido) -----------------------------------------------------
 
-function Vocab2Deck:studyNow()
-    -- Os plugins ficam registrados no ui pelo nome; o do Anki Viewer é "ankiviewer".
-    local av = self.ui and self.ui.ankiviewer
-    if not (av and av.showLocalStudy and av.saveSetting) then
-        Safe.message(_("O Anki Viewer não está instalado ou está desativado.\n\nAtive-o no gerenciamento de plugins (menu Ferramentas) e reinicie o KOReader."))
+-- Anki Viewer embutido, criado na primeira vez (mesmas configurações do original).
+-- A tela de estudo abre por cima do Início: "‹ Voltar" a fecha e mostra o
+-- Início (atualizado); "Fechar" fecha também o Início.
+function Vocab2Deck:getViewer()
+    if not self.viewer and AnkiViewer then
+        self.viewer = AnkiViewer:new{
+            ui = self.ui,
+            on_back = function()
+                local top = self.app and self.app:topScreen()
+                if top then top:onRevealed() else self:openHome() end
+            end,
+            on_close_all = function()
+                if self.app then self.app:closeAll() end
+            end,
+            on_decks_changed = function()
+                local top = self.app and self.app:topScreen()
+                if top then top:onRevealed() end
+            end,
+        }
+    end
+    return self.viewer
+end
+
+-- Abre a tela de estudo num baralho (nil = o último estudado).
+function Vocab2Deck:studyDeck(deck_id)
+    local av = self:getViewer()
+    if not av then
+        Safe.message(_("A tela de estudo não carregou (veja o crash.log do KOReader)."))
         return
     end
+    Safe.run(_("abrir o estudo"), av.openDeck, av, deck_id)
+end
+
+-- Estudar: os baralhos deste plugin (pergunta qual, se houver mais de um).
+function Vocab2Deck:studyNow()
     local decks = Safe.run(_("listar baralhos"), function() return self:writer():ourDecks() end)
     if not decks then return end
     if #decks == 0 then
-        Safe.message(_("Ainda não há cartões exportados.\n\nRevise o Inbox e toque em Exportar."))
+        -- nada exportado ainda: abre como o Anki Viewer abria (último baralho)
+        self:studyDeck(nil)
+    elseif #decks == 1 then
+        self:studyDeck(decks[1].id)
+    else
+        UI.chooseDeck(decks, function(d) self:studyDeck(d.id) end)
+    end
+end
+
+-- Todos os baralhos do Anki Viewer, para a lista do Início.
+function Vocab2Deck:allDecks()
+    return Safe.run(_("listar baralhos"), function() return self:writer():allDecks() end) or {}
+end
+
+-- Importar .apkg da pasta ankiviewer/shared (o Import do Anki Viewer).
+function Vocab2Deck:importApkg()
+    local av = self:getViewer()
+    if not av then
+        Safe.message(_("A tela de estudo não carregou (veja o crash.log do KOReader)."))
         return
     end
-    local function open(deck)
-        Safe.run(_("abrir o Anki Viewer"), function()
-            if self.app then self.app:closeAll() end
-            -- o Anki Viewer abre no último baralho usado (setting last_deck_id)
-            av:saveSetting("last_deck_id", deck.id)
-            if av.screen and av.screen.onClose then av.screen:onClose() end
-            av:showLocalStudy()
-        end)
-    end
-    if #decks == 1 then
-        open(decks[1])
-    else
-        UI.chooseDeck(decks, open)
-    end
+    Safe.run(_("importar"), av.importLocalApkg, av)
+end
+
+-- Toque longo num baralho do Início: estudar, mapeamento de campos, apagar.
+function Vocab2Deck:deckOptions(deck)
+    UI.deckOptions(self, deck)
 end
 
 return Vocab2Deck

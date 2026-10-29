@@ -28,24 +28,29 @@
 <text x="1165" y="588" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
 <rect x="30" y="629" width="1176" height="4" fill="#000000"/>
 <text x="30" y="673" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">○ 3 palavras novas vieram do Vocabulary Builder.</text>
-<rect x="30" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="153" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
-<rect x="427" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="428.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#999999" stroke-width="3"/>
-<text x="502" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#999999">Sincronizar (0)</text>
-<rect x="824" y="707" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="825.5" y="708.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="915" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
-<rect x="30" y="837" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="838.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="130" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">＋ Adicionar</text>
-<rect x="427" y="837" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="428.5" y="838.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="572" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
-<rect x="824" y="837" width="382" height="111" rx="11" fill="#ffffff"/>
-<rect x="825.5" y="838.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="961" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Estudar</text>
+<rect x="30" y="707" width="324" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="708.5" width="321.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="124" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
+<rect x="369" y="707" width="439" height="111" rx="11" fill="#ffffff"/>
+<rect x="370.5" y="708.5" width="436.0" height="108.0" rx="11" fill="none" stroke="#999999" stroke-width="3"/>
+<text x="473" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#999999">Sincronizar (0)</text>
+<rect x="823" y="707" width="383" height="111" rx="11" fill="#ffffff"/>
+<rect x="824.5" y="708.5" width="380.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="914" y="772" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
+<rect x="30" y="837" width="331" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="838.5" width="328.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="104" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">＋ Adicionar</text>
+<rect x="376" y="837" width="248" height="111" rx="11" fill="#ffffff"/>
+<rect x="377.5" y="838.5" width="245.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="454" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
+<rect x="639" y="837" width="275" height="111" rx="11" fill="#ffffff"/>
+<rect x="640.5" y="838.5" width="272.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="715" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Importar</text>
+<rect x="929" y="837" width="277" height="111" rx="11" fill="#ffffff"/>
+<rect x="930.5" y="838.5" width="274.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="1013" y="902" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Estudar</text>
+<text x="30" y="1014" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:24px" fill="#000000">BARALHOS</text>
+<text x="30" y="1063" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">Nenhum baralho ainda. Exporte os Revisados ou toque em Importar.</text>
 <rect x="0" y="1487" width="1236" height="4" fill="#000000"/>
 <rect x="30" y="1514" width="580" height="111" rx="11" fill="#ffffff"/>
 <rect x="31.5" y="1515.5" width="577.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>

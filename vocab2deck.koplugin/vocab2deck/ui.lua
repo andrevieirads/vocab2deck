@@ -54,7 +54,7 @@ end
 -- Erros do banco do Anki Viewer em texto claro.
 function UI.deckError(status)
     if status == "old_schema" then
-        return _("O banco do Anki Viewer é de uma versão antiga.\n\nAbra o Anki Viewer uma vez (ele atualiza o próprio banco) e tente de novo.")
+        return _("O banco do Anki Viewer é de uma versão antiga.\n\nToque em Estudar uma vez (o Anki Viewer embutido atualiza o próprio banco) e tente de novo.")
     end
     return _("O banco do Anki Viewer tem um formato desconhecido. Por segurança, nada será gravado.")
 end
@@ -170,6 +170,66 @@ function UI.chooseDeck(decks, on_choice)
     UIManager:show(dialog)
 end
 
+-- Texto de um baralho nas listas: "Nome — 3 para estudar / 40".
+function UI.deckLabel(d)
+    return T(_("%1 — %2 para estudar / %3"), d.name, d.due, d.cards)
+end
+
+-- Toque longo num baralho (Início): estudar, mapeamento de campos (baralhos
+-- importados de .apkg) e apagar, como no Decks do Anki Viewer.
+function UI.deckOptions(plugin, deck)
+    local dialog
+    local buttons = {
+        { { text = _("Estudar"), callback = function() UIManager:close(dialog); plugin:studyDeck(deck.id) end } },
+    }
+    if not deck.ours then
+        buttons[#buttons + 1] = { { text = _("Mapeamento de campos"), callback = function()
+            UIManager:close(dialog)
+            local av = plugin:getViewer()
+            if av then Safe.run(_("mapeamento de campos"), av.openDeckFieldMapping, av, deck) end
+        end } }
+    end
+    buttons[#buttons + 1] = { { text = _("Apagar baralho"), callback = function()
+        UIManager:close(dialog)
+        local extra = deck.ours and _("\n\nOs cartões deste plugin voltam na próxima exportação (como cartões novos).") or ""
+        UIManager:show(ConfirmBox:new{
+            text = T(_("Apagar o baralho \"%1\" e os %2 cartões dele, com o progresso?"), deck.name, deck.cards) .. extra,
+            ok_text = _("Apagar"),
+            ok_callback = function()
+                local av = plugin:getViewer()
+                if not av then return end
+                if Safe.run(_("apagar baralho"), function() av:deleteDeck(deck.id, deck.name); return true end) then
+                    info(T(_("Baralho \"%1\" apagado."), deck.name), 3)
+                end
+            end,
+        })
+    end } }
+    buttons[#buttons + 1] = { { text = _("Fechar"), callback = function() UIManager:close(dialog) end } }
+    dialog = ButtonDialog:new{ title = deck.name, title_align = "center", buttons = buttons }
+    UIManager:show(dialog)
+end
+
+-- Todos os baralhos numa lista em tela cheia (quando não cabem no Início).
+function UI.showDecks(plugin, decks)
+    local menu
+    local items = {}
+    for __, d in ipairs(decks) do
+        items[#items + 1] = { text = UI.deckLabel(d), deck = d }
+    end
+    menu = UI.fullMenu(_("Baralhos"), items)
+    function menu:onMenuChoice(item)
+        UIManager:close(self)
+        plugin:studyDeck(item.deck.id)
+        return true
+    end
+    function menu:onMenuHold(item)
+        UIManager:close(self)
+        plugin:deckOptions(item.deck)
+        return true
+    end
+    UIManager:show(menu)
+end
+
 -- Menu em tela cheia (lista paginada, sem rolagem contínua).
 function UI.fullMenu(title, items)
     local Screen = Device.screen
@@ -231,6 +291,16 @@ function UI.showSettings(plugin, on_close)
     local menu
     local function refresh()
         if menu and menu.updateItems then menu:updateItems(1, true) end
+    end
+    -- opções de estudo do Anki Viewer embutido
+    local function study(key, default)
+        local av = plugin:getViewer()
+        if not av then return default end
+        return av:readSetting(key, default)
+    end
+    local function setStudy(key, value)
+        local av = plugin:getViewer()
+        if av then av:saveSetting(key, value) end
     end
     local function toggle(key, note)
         return function()
@@ -346,6 +416,72 @@ function UI.showSettings(plugin, on_close)
                     { text = "1", value = 1 }, { text = "2", value = 2 },
                     { text = "3", value = 3 }, { text = "5", value = 5 },
                 }, function(v) s:set("max_senses", v); refresh() end)
+            end,
+        },
+        -- Estudo: as opções do Settings do Anki Viewer embutido (mesmas chaves,
+        -- guardadas em settings/ankiviewer.lua)
+        {
+            text = _("Estudo: aleatório entre cartões do mesmo dia"),
+            keep_menu_open = true,
+            mandatory_func = function() return yesNo(study("randomize_equal_due", false)) end,
+            callback = function()
+                setStudy("randomize_equal_due", not study("randomize_equal_due", false))
+                refresh()
+            end,
+        },
+        {
+            text = _("Estudo: cartões novos por dia"),
+            keep_menu_open = true,
+            mandatory_func = function()
+                local n = tonumber(study("daily_new_cards_limit", 20)) or 20
+                return n == 0 and _("Sem limite") or tostring(n)
+            end,
+            callback = function()
+                askNumber(_("Cartões novos por dia"), tonumber(study("daily_new_cards_limit", 20)) or 20,
+                    _("Quantos cartões novos aparecem por dia no estudo. 0 = sem limite."),
+                    function(n) setStudy("daily_new_cards_limit", math.max(0, math.floor(n))); refresh() end)
+            end,
+        },
+        {
+            text = _("Estudo: tela cheia"),
+            keep_menu_open = true,
+            mandatory_func = function() return yesNo(study("fullscreen_study", false)) end,
+            callback = function()
+                setStudy("fullscreen_study", not study("fullscreen_study", false))
+                refresh()
+                info(_("Vale a partir da próxima vez que o estudo abrir."), 3)
+            end,
+        },
+        {
+            text = _("Estudo: intervalo mínimo"),
+            keep_menu_open = true,
+            mandatory_func = function()
+                local d = tonumber(study("min_interval_days", 0)) or 0
+                return d == 0 and _("Padrão") or T(_("%1 d"), d)
+            end,
+            callback = function()
+                choose(_("Intervalo mínimo entre revisões (vale para Again; os outros botões crescem na mesma proporção)"), {
+                    { text = _("Padrão (sem mínimo)"), value = 0 },
+                    { text = _("1 dia"), value = 1 }, { text = _("3 dias"), value = 3 },
+                    { text = _("7 dias"), value = 7 }, { text = _("14 dias"), value = 14 },
+                }, function(v) setStudy("min_interval_days", v); refresh() end)
+            end,
+        },
+        {
+            text = _("Estudo: mapeamento de campos de um baralho importado"),
+            callback = function()
+                local imported = {}
+                for __, d in ipairs(plugin:allDecks()) do
+                    if not d.ours then imported[#imported + 1] = { text = d.name, value = d } end
+                end
+                if #imported == 0 then
+                    info(_("Nenhum baralho importado de .apkg."), 3)
+                    return
+                end
+                choose(_("Qual baralho?"), imported, function(d)
+                    local av = plugin:getViewer()
+                    if av then Safe.run(_("mapeamento de campos"), av.openDeckFieldMapping, av, d) end
+                end)
             end,
         },
         {
