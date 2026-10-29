@@ -1,7 +1,8 @@
 --[[--
 Início: onde cada palavra está e o caminho para revisar, editar e exportar.
 Mesmo desenho da tela inicial do KR2Anki (kr2anki/screens/home.lua):
-seção de status, linha de ações e barra de baixo "Revisar" / "Exportar".
+seção de status, duas linhas de ações (Buscar · Sincronizar · Configurações /
+Adicionar · Campos · Estudar) e barra de baixo "Revisar" / "Exportar".
 --]]
 
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -105,19 +106,18 @@ function Home:build(w, h)
         table.insert(body, Kit.textbox(line, Kit.ui(Kit.SIZE.small), cw, { fgcolor = Kit.GREY_DARK, max_lines = 3 }))
     end
     table.insert(body, Kit.vspan(Kit.dp(12)))
+    -- duas linhas de três: Buscar · Sincronizar · Configurações / Adicionar · Campos · Estudar
     table.insert(body, Kit.buttonRow(cw + 2 * Kit.PAD, {
-        { text = _("＋ Adicionar cartão"), weight = 1.6, callback = function()
-            require("vocab2deck/capture").manual(self.host)
-        end },
         { text = _("⌕ Buscar"), callback = function() self.host:askSearch(self.app) end },
-        { text = _("Campos"), callback = function() self.app:open("vocab2deck/screens/model", {}) end },
-        { text = _("Configurações"), weight = 1.4, callback = function() self.host:showSettings() end },
+        { text = T(_("Sincronizar (%1)"), self.counts.deck), enabled = self.counts.deck > 0,
+          callback = function() self.host:syncDeck() end },
+        { text = _("Configurações"), callback = function() self.host:showSettings() end },
     }, { size = Kit.SIZE.small }))
     table.insert(body, Kit.vspan(Kit.dp(10)))
     table.insert(body, Kit.buttonRow(cw + 2 * Kit.PAD, {
-        { text = _("Estudar no Anki Viewer"), callback = function() self.host:studyNow() end },
-        { text = T(_("Sincronizar (%1)"), self.counts.deck), enabled = self.counts.deck > 0,
-          callback = function() self.host:syncDeck() end },
+        { text = _("＋ Adicionar"), callback = function() require("vocab2deck/capture").manual(self.host) end },
+        { text = _("Campos"), callback = function() self.app:open("vocab2deck/screens/model", {}) end },
+        { text = _("Estudar"), callback = function() self.host:studyNow() end },
     }, { size = Kit.SIZE.small }))
     return VerticalGroup:new{
         align = "left",

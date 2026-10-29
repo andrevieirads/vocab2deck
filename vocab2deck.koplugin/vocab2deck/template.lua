@@ -114,7 +114,12 @@ function T.generated(item, field, opts)
         local s = B.contextSentence(item)
         return s and ("“" .. s.text .. "”") or ""
     end
-    if src == "definition" then return T.defaultDefinition(item, opts and opts.max_senses) end
+    if src == "definition" then
+        local def = T.defaultDefinition(item, opts and opts.max_senses)
+        -- dicionário que devolve o próprio texto: não é definição (o verso não copia a frente)
+        if U.squash(def):lower() == U.squash(item.word or ""):lower() then return "" end
+        return def
+    end
     if src == "book" then
         local b = item.book and U.squash(item.book) or ""
         return b ~= "" and ("— " .. b) or ""
@@ -210,7 +215,8 @@ function T.render(fields, opts)
     local back = join(fields, "back", placeholder)
     local function withFront(shown_first, rest)
         if not opts.front_on_back or shown_first == "" then return rest end
-        if rest == "" then return shown_first end
+        -- verso vazio continua vazio: não vira uma cópia da frente
+        if rest == "" then return "" end
         return shown_first .. "\n\n" .. B.SEPARATOR .. "\n\n" .. rest
     end
     return {

@@ -233,6 +233,13 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     S.p:onVocab2DeckOpen()
     check(has("Inbox") and has("Revisados") and has("No baralho"), "status no Início: " .. screenText())
     check(has("3 palavras novas vieram do Vocabulary Builder"), "aviso das palavras novas")
+    -- ordem dos botões: Buscar · Sincronizar · Configurações / Adicionar · Campos · Estudar / Revisar · Exportar
+    local order, want = {}, { "⌕ Buscar", "Sincronizar (0)", "Configurações", "＋ Adicionar", "Campos", "Estudar",
+                              "Revisar (3)", "Exportar (0)" }
+    local set = {}
+    for _, w in ipairs(want) do set[w] = true end
+    for _, t in ipairs(texts()) do if set[t] then order[#order + 1] = t end end
+    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem dos botões do Início")
     eq(S.dict.lookups, 0, "abrir não busca no dicionário")
     noOffscreen("início")
     snap("1_inicio")
@@ -887,7 +894,7 @@ scenario("Início: ＋ Adicionar cartão tem tipo próprio só com Frente e Vers
     p:onVocab2DeckOpen()
     noOffscreen("início com adicionar cartão")
     snap("13_inicio_adicionar")
-    tapText("Adicionar cartão")
+    tapText("^＋ Adicionar$")
     LAST_inputdialog._input = "carpe diem"
     pressDialogButton(LAST_inputdialog, "Salvar")
     local exact = {}
@@ -946,6 +953,39 @@ scenario("Início: ＋ Adicionar cartão tem tipo próprio só com Frente e Vers
     local found
     for _, n in ipairs(notes) do if n:find("|carpe diem|", 1, true) then found = n end end
     check(found and contains(found, "aproveite o dia"), "pacote: " .. tostring(found))
+end)
+
+scenario("Adicionar cartão com frase: o verso não copia a frente", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    -- um dicionário que devolve o próprio texto como "definição"
+    local p = newPlugin(fakeDict({ ["tempus fugit"] = "tempus fugit" }), fakeAV(), fakeReader())
+    p:onVocab2DeckOpen()
+    tapText("^＋ Adicionar$")
+    LAST_inputdialog._input = "O tempo passa depressa quando a gente lê"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("O tempo passa depressa quando a gente lê") and has("Toque para preencher"), "verso vazio no editor: " .. screenText())
+    tapText("Pré%-visualizar")
+    local t = LAST_textviewer.text
+    check(contains(t, "VERSO\n(vazio)") and not contains(t, "SHOW ANSWER"), "pré-visualização sem cópia da frente: " .. t)
+    UIM:close(LAST_textviewer)
+    tapText("Toque para preencher")
+    LAST_inputdialog._input = "o tempo voa"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    tapText("Pré%-visualizar")
+    t = LAST_textviewer.text
+    check(contains(t, "VERSO\no tempo voa"), "verso só com o que foi escrito: " .. t)
+    check(contains(t, "SHOW ANSWER") and contains(t, "――――――"), "e a resposta do Anki Viewer à parte: " .. t)
+    UIM:close(LAST_textviewer)
+    tapText("^Salvar no Inbox")
+    -- dicionário que ecoa o texto: o verso fica vazio
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^＋ Adicionar$")
+    LAST_inputdialog._input = "tempus fugit"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("Toque para preencher"), "verso não preenchido com a frente: " .. screenText())
+    tapText("^Cancelar")
 end)
 
 scenario("destaque: − Campo só deste cartão ou de todos (modelo)", function()

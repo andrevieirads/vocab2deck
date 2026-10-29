@@ -29,24 +29,24 @@
 <rect x="30" y="629" width="1588" height="4" fill="#000000"/>
 <text x="30" y="673" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">✓ 2 cartões movidos para o baralho certo (progresso mantido).</text>
 <text x="30" y="724" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">1 cartões apagados no Anki Viewer (Sincronizar os cria de novo).</text>
-<rect x="30" y="758" width="493" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="759.5" width="490.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="131" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">＋ Adicionar cartão</text>
-<rect x="538" y="758" width="308" height="111" rx="11" fill="#ffffff"/>
-<rect x="539.5" y="759.5" width="305.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="624" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
-<rect x="861" y="758" width="308" height="111" rx="11" fill="#ffffff"/>
-<rect x="862.5" y="759.5" width="305.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="969" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
-<rect x="1184" y="758" width="434" height="111" rx="11" fill="#ffffff"/>
-<rect x="1185.5" y="759.5" width="431.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="1301" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
-<rect x="30" y="888" width="786" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="889.5" width="783.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="253" y="953" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Estudar no Anki Viewer</text>
-<rect x="831" y="888" width="787" height="111" rx="11" fill="#ffffff"/>
-<rect x="832.5" y="889.5" width="784.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="1109" y="953" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Sincronizar (3)</text>
+<rect x="30" y="758" width="519" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="759.5" width="516.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="221" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">⌕ Buscar</text>
+<rect x="564" y="758" width="519" height="111" rx="11" fill="#ffffff"/>
+<rect x="565.5" y="759.5" width="516.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="708" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Sincronizar (3)</text>
+<rect x="1098" y="758" width="520" height="111" rx="11" fill="#ffffff"/>
+<rect x="1099.5" y="759.5" width="517.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="1258" y="823" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Configurações</text>
+<rect x="30" y="888" width="519" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="889.5" width="516.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="198" y="953" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">＋ Adicionar</text>
+<rect x="564" y="888" width="519" height="111" rx="11" fill="#ffffff"/>
+<rect x="565.5" y="889.5" width="516.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="777" y="953" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Campos</text>
+<rect x="1098" y="888" width="520" height="111" rx="11" fill="#ffffff"/>
+<rect x="1099.5" y="889.5" width="517.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="1304" y="953" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">Estudar</text>
 <rect x="0" y="1075" width="1648" height="4" fill="#000000"/>
 <rect x="30" y="1102" width="786" height="111" rx="11" fill="#ffffff"/>
 <rect x="31.5" y="1103.5" width="783.0" height="108.0" rx="11" fill="none" stroke="#999999" stroke-width="3"/>

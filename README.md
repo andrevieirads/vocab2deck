@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.6
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 2.6.2
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -131,8 +131,10 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   ○ Inbox · ● Revisados · ✓ No baralho · × Descartados.
 - Avisos: palavras novas que vieram do Vocabulary Builder, cartões apagados, erros.
 - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
-- Linha de ações: **＋ Adicionar cartão** · ⌕ Buscar · Campos · Configurações.
-  - *＋ Adicionar cartão* pede a frente (uma palavra ou um trecho) e abre o editor de
+- Duas linhas de botões, embaixo dos status:
+  - **⌕ Buscar · Sincronizar (N) · Configurações**
+  - **＋ Adicionar · Campos · Estudar** (abre o Anki Viewer)
+  - *＋ Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
     **Novo cartão** com um **tipo próprio, só com Frente e Verso**:
     - **Frente** é o texto digitado.
     - **Verso** começa com a definição do dicionário (quando o texto tem até 4 palavras) e
@@ -140,7 +142,7 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   - Esse tipo não depende da tela Campos: mudar o modelo não afeta esses cartões.
   - No editor deles, + Campo e − Campo valem só para campos criados naquele cartão.
   - *Salvar no Inbox* guarda o cartão; *Cancelar* descarta.
-- *Estudar no Anki Viewer* · **Sincronizar (N)**: manda de novo os itens ✓ No baralho.
+- **Sincronizar (N)** manda de novo os itens ✓ No baralho.
   - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
     agendamento não muda**.
   - Cartões que sumiram do Anki Viewer são criados de novo.
@@ -193,7 +195,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
     e o `⋯` traz de volta) ou **De todos os cartões** (sai do modelo).
 - Os dois botões aparecem no cartão novo (destaque, popup do dicionário e *＋ Adicionar
   cartão*) e ao editar um cartão existente.
-- **Pré-visualizar** mostra a frente e o verso exatamente como o Anki Viewer vai mostrar.
+- **Pré-visualizar** mostra:
+  - a Frente;
+  - o Verso só com o que está nele;
+  - separado, a resposta do Anki Viewer (frente, traço e verso).
+
+  Verso vazio continua vazio: ele nunca vira uma cópia da frente.
 - Se a palavra já está no baralho, cada mudança atualiza o cartão na hora, sem mexer no
   progresso.
 
@@ -415,7 +422,7 @@ tests/run_tests.sh /caminho/para/ankiviewer.koplugin --previews
   - os GUIDs estáveis entre duas exportações.
 - `V2D_REPLAY=<pasta>` roda também uma réplica com cópias dos bancos de um aparelho
   (`settings/` e `ankiviewer/`).
-- Resultado atual: 223 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 229 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 

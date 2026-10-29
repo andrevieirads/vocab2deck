@@ -251,10 +251,16 @@ end
 function Editor:preview()
     local opts = self.host.settings:cardOptions()
     local r = Tpl.render(self.fields, opts)
+    local only = Tpl.render(self.fields, { missing_definition = opts.missing_definition }) -- verso sem repetir a frente
     local parts = {
         _("FRENTE"), r.f.front ~= "" and r.f.front or _("(vazia)"), "",
-        _("VERSO, como o Anki Viewer mostra ao tocar em Show answer"), r.f.back ~= "" and r.f.back or _("(vazio)"),
+        _("VERSO"), only.f.back ~= "" and only.f.back or _("(vazio)"),
     }
+    if only.f.back ~= "" then
+        parts[#parts + 1] = ""
+        parts[#parts + 1] = _("NO ANKI VIEWER, AO TOCAR EM SHOW ANSWER (frente, traço e verso)")
+        parts[#parts + 1] = r.f.back
+    end
     if opts.both_directions then
         parts[#parts + 1] = ""
         parts[#parts + 1] = _("CARTÃO INVERSO · FRENTE")
