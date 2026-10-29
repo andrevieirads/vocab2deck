@@ -37,6 +37,25 @@ function T.defaults()
     }
 end
 
+--[[--
+Tipo fixo dos cartões criados em "＋ Adicionar cartão": só Frente e Verso.
+Os ids reaproveitam "word" e "definition": a frente é o texto digitado e o
+verso começa com a definição do dicionário (quando houver) e é editável. Não
+muda com a tela Campos.
+--]]
+T.MANUAL_ORIGIN = "manual"
+function T.manual()
+    return {
+        { id = "word", name = "Frente", side = "front", source = "word" },
+        { id = "definition", name = "Verso", side = "back", source = "definition" },
+    }
+end
+
+-- O cartão usa o tipo fixo Frente/Verso (criado em "＋ Adicionar cartão")?
+function T.isManual(item)
+    return item ~= nil and item.origin == T.MANUAL_ORIGIN
+end
+
 local function copy(list)
     local out = {}
     for i, f in ipairs(list) do out[i] = { id = f.id, name = f.name, side = f.side, source = f.source } end
@@ -95,7 +114,12 @@ function T.generated(item, field, opts)
         local s = B.contextSentence(item)
         return s and ("“" .. s.text .. "”") or ""
     end
-    if src == "definition" then return T.defaultDefinition(item, opts and opts.max_senses) end
+    if src == "definition" then
+        local def = T.defaultDefinition(item, opts and opts.max_senses)
+        -- dicionário que devolve o próprio texto: não é definição (o verso não copia a frente)
+        if U.squash(def):lower() == U.squash(item.word or ""):lower() then return "" end
+        return def
+    end
     if src == "book" then
         local b = item.book and U.squash(item.book) or ""
         return b ~= "" and ("— " .. b) or ""
@@ -105,15 +129,19 @@ end
 
 --[[--
 Campos do item, na ordem: os do modelo e depois os extras.
-@treturn table { {id, name, value, side, source, extra, edited} }
+removed = campo do modelo tirado só deste cartão (não vai para o cartão).
+@treturn table { {id, name, value, side, source, extra, edited, removed} }
 --]]
 function T.fields(item, list, opts)
     local out = {}
     local overrides = item.overrides or {}
+    local sides = item.sides or {}
     for _, f in ipairs(list) do
         local edited = overrides[f.id] ~= nil
+        local removed = sides[f.id] == "none"
         out[#out + 1] = {
-            id = f.id, name = f.name, side = f.side, source = f.source, extra = false, edited = edited,
+            id = f.id, name = f.name, side = removed and "none" or f.side, source = f.source, extra = false,
+            edited = edited, removed = removed,
             value = edited and overrides[f.id] or T.generated(item, f, opts),
         }
     end
@@ -187,7 +215,8 @@ function T.render(fields, opts)
     local back = join(fields, "back", placeholder)
     local function withFront(shown_first, rest)
         if not opts.front_on_back or shown_first == "" then return rest end
-        if rest == "" then return shown_first end
+        -- verso vazio continua vazio: não vira uma cópia da frente
+        if rest == "" then return "" end
         return shown_first .. "\n\n" .. B.SEPARATOR .. "\n\n" .. rest
     end
     return {

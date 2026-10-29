@@ -21,8 +21,10 @@ local Tpl = require("vocab2deck/template")
 
 local Sync = {}
 
--- Texto dos dois lados de um item com o modelo atual.
+-- Texto dos dois lados de um item. model é a lista de campos ou uma função
+-- item -> lista (cada cartão pode ter o seu tipo, ex.: Frente/Verso dos manuais).
 function Sync.renderItem(item, model, opts)
+    if type(model) == "function" then model = model(item) end
     local fields = Tpl.fields(item, model, opts)
     return Tpl.render(fields, opts), fields
 end

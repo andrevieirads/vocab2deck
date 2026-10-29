@@ -28,9 +28,11 @@
 <text x="94" y="680" style="font-family:Helvetica, Arial, sans-serif;font-size:34px" fill="#000000">Notas</text>
 <text x="94" y="720" style="font-family:Helvetica, Arial, sans-serif;font-size:24px" fill="#444444">Verso · campo seu, começa vazio</text>
 <text x="1165" y="701" style="font-family:Helvetica, Arial, sans-serif;font-size:41px" fill="#000000">›</text>
-<text x="30" y="790" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">No Anki Viewer, &quot;Show answer&quot; mostra a frente, um traço e o verso.</text>
-<text x="30" y="841" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">Na revisão, &quot;✎ Campos do cartão&quot; deixa editar o texto de cada campo e</text>
-<text x="30" y="877" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">criar campos só para aquele cartão.</text>
+<text x="30" y="790" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">Vale para as palavras do Vocabulary Builder e do livro. Cartões criados em</text>
+<text x="30" y="826" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">&quot;＋ Adicionar cartão&quot; têm só Frente e Verso.</text>
+<text x="30" y="877" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">No Anki Viewer, &quot;Show answer&quot; mostra a frente, um traço e o verso.</text>
+<text x="30" y="928" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">Na revisão, &quot;✎ Campos do cartão&quot; deixa editar o texto de cada campo e</text>
+<text x="30" y="964" text-anchor="start" style="font-family:Helvetica, Arial, sans-serif;font-size:28px" fill="#444444">criar campos só para aquele cartão.</text>
 <rect x="0" y="1487" width="1236" height="4" fill="#000000"/>
 <rect x="30" y="1514" width="382" height="111" rx="11" fill="#ffffff"/>
 <rect x="31.5" y="1515.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>

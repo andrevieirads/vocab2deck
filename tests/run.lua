@@ -233,6 +233,13 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     S.p:onVocab2DeckOpen()
     check(has("Inbox") and has("Revisados") and has("No baralho"), "status no Início: " .. screenText())
     check(has("3 palavras novas vieram do Vocabulary Builder"), "aviso das palavras novas")
+    -- ordem dos botões: Buscar · Sincronizar · Configurações / Adicionar · Campos · Estudar / Revisar · Exportar
+    local order, want = {}, { "⌕ Buscar", "Sincronizar (0)", "Configurações", "＋ Adicionar", "Campos", "Estudar",
+                              "Revisar (3)", "Exportar (0)" }
+    local set = {}
+    for _, w in ipairs(want) do set[w] = true end
+    for _, t in ipairs(texts()) do if set[t] then order[#order + 1] = t end end
+    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem dos botões do Início")
     eq(S.dict.lookups, 0, "abrir não busca no dicionário")
     noOffscreen("início")
     snap("1_inicio")
@@ -878,6 +885,140 @@ scenario("Descartados: Limpar tira do plugin e não volta do Vocabulary Builder"
     UIM.stack = {}
     p:onVocab2DeckOpen()
     eq(p:getStore():get("w:quixotic").status, "inbox", "e fica depois da leitura do Vocabulary Builder")
+end)
+
+scenario("Início: ＋ Adicionar cartão tem tipo próprio só com Frente e Verso", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local defs = { ["carpe diem"] = "aproveite o dia" }
+    for k, v in pairs(DEFS) do defs[k] = v end
+    local p = newPlugin(fakeDict(defs), fakeAV(), fakeReader())
+    p:onReaderReady()
+    p:onVocab2DeckOpen()
+    noOffscreen("início com adicionar cartão")
+    snap("13_inicio_adicionar")
+    tapText("^＋ Adicionar$")
+    LAST_inputdialog._input = "carpe diem"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    local exact = {}
+    for _, t in ipairs(texts()) do exact[t] = true end
+    check(has("Novo cartão") and exact["Frente"] and exact["Verso"], "Frente e Verso: " .. screenText())
+    check(not exact["Palavra"] and not exact["Frase"] and not exact["Livro"] and not exact["Notas"] and not exact["Definição"],
+        "sem os campos do modelo: " .. screenText())
+    check(has("carpe diem") and has("aproveite o dia"), "frente digitada e verso com a definição do dicionário")
+    check(has("− Campo") and has("+ Campo") and has("Salvar no Inbox"), "botões")
+    noOffscreen("novo cartão manual")
+    snap("14_novo_manual")
+    -- − Campo sem campos extras: avisa (Frente e Verso não saem)
+    tapText("^− Campo")
+    check(contains(info(), "só Frente e Verso"), "aviso: " .. tostring(info()))
+    UIM:close(LAST_infomessage) -- no aparelho o aviso some sozinho (timeout)
+    -- + Campo: só neste cartão (sem opção de modelo)
+    tapText("^%+ Campo")
+    local opts = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    check(contains(opts, "Só neste cartão") and not contains(opts, "No modelo"), "+ Campo só neste cartão: " .. opts)
+    pressDialogButton(LAST_buttondialog, "Só neste cartão")
+    LAST_inputdialog._input = "Origem"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    pressDialogButton(LAST_buttondialog, "Verso")
+    LAST_inputdialog._input = "latim"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(findOnPages("Origem"), "campo extra criado")
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Origem (só neste cartão)")
+    check(not has("Origem"), "campo extra tirado: " .. screenText())
+    -- ⋯ da Frente: sem opções de modelo
+    tapText("^⋯$", 1)
+    opts = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    check(not contains(opts, "modelo") and not contains(opts, "Tirar"), "⋯ sem modelo: " .. opts)
+    pressDialogButton(LAST_buttondialog, "Cancelar")
+    tapText("^Salvar no Inbox")
+    local it = p:getStore():get("w:carpe diem")
+    eq(it and it.origin, "manual", "origem: manual")
+
+    -- mudar o modelo da tela Campos não mexe no cartão Frente/Verso
+    local model = p:model()
+    for i = #model, 1, -1 do if model[i].id == "definition" or model[i].id == "sentence" then table.remove(model, i) end end
+    p:setModel(model)
+    p:getStore():setStatus({ "w:carpe diem", "w:serendipity" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(2%)")
+    eq(scalar(data, "SELECT front FROM cards WHERE source_key = 'vocab2deck:f:w:carpe diem'"), "carpe diem", "frente")
+    local back = scalar(data, "SELECT back FROM cards WHERE source_key = 'vocab2deck:f:w:carpe diem'")
+    check(back and back:sub(1, 10) == "carpe diem" and contains(back, "aproveite o dia"), "verso: frente + verso: " .. tostring(back))
+    local sback = scalar(data, "SELECT back FROM cards WHERE source_key = 'vocab2deck:f:w:serendipity'")
+    -- serendipity segue o modelo: sem Definição e sem Frase, o verso fica vazio e ele é pulado
+    eq(sback, nil, "cartão do modelo segue o modelo (verso vazio, pulado)")
+    eq(p:getStore():get("w:serendipity").status, "ready", "e continua Revisado")
+    -- no pacote do Anki também
+    local r, notes = checkApkg(data .. "/ankiviewer/shared/Vocab2Deck.apkg")
+    local found
+    for _, n in ipairs(notes) do if n:find("|carpe diem|", 1, true) then found = n end end
+    check(found and contains(found, "aproveite o dia"), "pacote: " .. tostring(found))
+end)
+
+scenario("Adicionar cartão com frase: o verso não copia a frente", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    -- um dicionário que devolve o próprio texto como "definição"
+    local p = newPlugin(fakeDict({ ["tempus fugit"] = "tempus fugit" }), fakeAV(), fakeReader())
+    p:onVocab2DeckOpen()
+    tapText("^＋ Adicionar$")
+    LAST_inputdialog._input = "O tempo passa depressa quando a gente lê"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("O tempo passa depressa quando a gente lê") and has("Toque para preencher"), "verso vazio no editor: " .. screenText())
+    tapText("Pré%-visualizar")
+    local t = LAST_textviewer.text
+    check(contains(t, "VERSO\n(vazio)") and not contains(t, "SHOW ANSWER"), "pré-visualização sem cópia da frente: " .. t)
+    UIM:close(LAST_textviewer)
+    tapText("Toque para preencher")
+    LAST_inputdialog._input = "o tempo voa"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    tapText("Pré%-visualizar")
+    t = LAST_textviewer.text
+    check(contains(t, "VERSO\no tempo voa"), "verso só com o que foi escrito: " .. t)
+    check(contains(t, "SHOW ANSWER") and contains(t, "――――――"), "e a resposta do Anki Viewer à parte: " .. t)
+    UIM:close(LAST_textviewer)
+    tapText("^Salvar no Inbox")
+    -- dicionário que ecoa o texto: o verso fica vazio
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^＋ Adicionar$")
+    LAST_inputdialog._input = "tempus fugit"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("Toque para preencher"), "verso não preenchido com a frente: " .. screenText())
+    tapText("^Cancelar")
+end)
+
+scenario("destaque: − Campo só deste cartão ou de todos (modelo)", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local reader = fakeReader()
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    p:onReaderReady()
+    p:syncVocab()
+    local hl = reader.highlight
+    hl.selected_text = { text = "windmills" }
+    hl.ctx_prev, hl.ctx_next = "He fought ", " all day."
+    hl.buttons.vocab2deck_add(hl).callback()
+    check(has("Palavra") and has("Frase"), "cartão do destaque usa o modelo: " .. screenText())
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Frase")
+    pressDialogButton(LAST_buttondialog, "Só deste cartão")
+    check(has("removido deste cartão"), "Frase removida deste cartão")
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Livro")
+    pressDialogButton(LAST_buttondialog, "De todos os cartões")
+    confirm()
+    check(not has("— Dom Quixote"), "Livro tirado do modelo")
+    tapText("^⋯$", 2)
+    pressDialogButton(LAST_buttondialog, "Trazer de volta para este cartão")
+    check(not has("removido deste cartão"), "Frase de volta")
+    tapText("^Salvar no Inbox")
+    local names = {}
+    for _, f in ipairs(p:model()) do names[#names + 1] = f.name end
+    check(not table.concat(names, ","):find("Livro"), "modelo sem Livro: " .. table.concat(names, ","))
 end)
 
 scenario("lista: seleção em massa e busca", function()

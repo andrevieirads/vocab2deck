@@ -166,8 +166,39 @@ function Vocab2Deck:model()
     return Tpl.load(self.settings)
 end
 
+-- Campos de um cartão: Frente/Verso para os criados em "＋ Adicionar cartão",
+-- o modelo da tela Campos para os outros.
+function Vocab2Deck:modelFor(item)
+    if Tpl.isManual(item) then return Tpl.manual() end
+    return self:model()
+end
+
+-- Função item -> campos, para planejar vários cartões de uma vez.
+function Vocab2Deck:modelResolver()
+    local general = self:model()
+    return function(item)
+        if Tpl.isManual(item) then return Tpl.manual() end
+        return general
+    end
+end
+
 function Vocab2Deck:setModel(list)
     Tpl.save(self.settings, list)
+end
+
+-- Tira um campo do modelo (de todos os cartões). Campo seu: o texto dele some;
+-- campo do plugin: as edições ficam guardadas para quando ele voltar.
+function Vocab2Deck:removeModelField(id)
+    local list = self:model()
+    if #list <= 1 then error(_("O cartão precisa de pelo menos um campo."), 0) end
+    for i, f in ipairs(list) do
+        if f.id == id then
+            table.remove(list, i)
+            if not Tpl.isBuiltin(f) then self:getStore():dropField(f.id) end
+            break
+        end
+    end
+    self:setModel(list)
 end
 
 function Vocab2Deck:addModelField(name, side)
@@ -294,7 +325,7 @@ O que está pendente para cartões já no baralho.
 function Vocab2Deck:pendingChanges()
     local ok, res = pcall(function()
         local items = self:getStore():all({ statuses = { deck = true } })
-        local plan = Sync.plan(items, self:deckState(), self:model(), self:planOptions())
+        local plan = Sync.plan(items, self:deckState(), self:modelResolver(), self:planOptions())
         local sides = 0
         for __, e in ipairs(plan.new) do sides = sides + #e.sides end
         return { changed = plan.changed, deleted = plan.deleted, new_sides = sides }
@@ -321,7 +352,7 @@ function Vocab2Deck:autoUpdate()
         local state = self:deckState()
         if state.status ~= "ok" then return nil end
         local items = self:getStore():all({ statuses = { deck = true } })
-        local plan = Sync.plan(items, state, self:model(), self:planOptions())
+        local plan = Sync.plan(items, state, self:modelResolver(), self:planOptions())
         local ops = { moves = plan.moves, updates = mode == "update" and Sync.updateOps(plan.changed, true) or {} }
         if #ops.moves + #ops.updates == 0 then return nil end
         local r = DeckWriter.apply(self:writer(), ops, { backup_done = self._session_backup })
@@ -341,7 +372,7 @@ end
 function Vocab2Deck:pushItemToDeck(vkey)
     local item = self:getStore():get(vkey)
     if not item or item.status ~= "deck" then return end
-    local ups = Sync.itemUpdates(item, self:deckState(), self:model(), self:planOptions())
+    local ups = Sync.itemUpdates(item, self:deckState(), self:modelResolver(), self:planOptions())
     if #ups == 0 then return end
     local ok, err = pcall(DeckWriter.apply, self:writer(), { updates = ups }, { backup_done = self._session_backup })
     if not ok then
@@ -443,7 +474,7 @@ function Vocab2Deck:writeApkg()
         if state.status ~= "ok" then return nil end
         -- no Anki o verso já mostra a frente ({{FrontSide}}): aqui o verso não a repete
         local opts = self:planOptions({ front_on_back = false })
-        local model = self:model()
+        local model = self:modelResolver()
         local notes = {}
         -- todo cartão do plugin que existe no Anki Viewer (menos de itens descartados)
         for __, item in ipairs(self:getStore():all({ statuses = { inbox = true, ready = true, deck = true } })) do
@@ -496,7 +527,7 @@ function Vocab2Deck:_export(Trapper, run_opts)
         return { error = UI.deckError(status), changes_pending = {} }
     end
     local store = self:getStore()
-    local model = self:model()
+    local model = self:modelResolver()
     local opts = self:planOptions({ include_inbox = run_opts.include_inbox })
     local state = self:deckState()
     local plan = Sync.plan(store:all(), state, model, opts)
@@ -602,7 +633,7 @@ function Vocab2Deck:syncDeck()
         if status == "old_schema" or status == "bad_schema" then error(UI.deckError(status), 0) end
         if status == "ok" then self:writer():forgetDeleted() end
         local state = self:deckState()
-        local model, opts = self:model(), self:planOptions()
+        local model, opts = self:modelResolver(), self:planOptions()
         local items = self:getStore():all({ statuses = { deck = true } })
         local plan = Sync.plan(items, state, model, opts)
         local ops = Sync.insertOps(plan.new, model, opts)

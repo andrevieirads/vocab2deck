@@ -45,9 +45,12 @@
 <text x="59" y="1450" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#999999">‹</text>
 <text x="1124" y="1450" style="font-family:Helvetica, Arial, sans-serif;font-size:53px" fill="#999999">›</text>
 <rect x="0" y="1487" width="1236" height="4" fill="#000000"/>
-<rect x="30" y="1514" width="580" height="111" rx="11" fill="#ffffff"/>
-<rect x="31.5" y="1515.5" width="577.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
-<text x="254" y="1581" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#000000">+ Campo</text>
-<rect x="625" y="1514" width="581" height="111" rx="11" fill="#000000"/>
-<text x="859" y="1581" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:34px" fill="#ffffff">Pronto</text>
+<rect x="30" y="1514" width="382" height="111" rx="11" fill="#ffffff"/>
+<rect x="31.5" y="1515.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="161" y="1579" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">− Campo</text>
+<rect x="427" y="1514" width="382" height="111" rx="11" fill="#ffffff"/>
+<rect x="428.5" y="1515.5" width="379.0" height="108.0" rx="11" fill="none" stroke="#000000" stroke-width="3"/>
+<text x="564" y="1579" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#000000">+ Campo</text>
+<rect x="824" y="1514" width="382" height="111" rx="11" fill="#000000"/>
+<text x="969" y="1579" style="font-family:Helvetica, Arial, sans-serif;font-weight:600;font-size:28px" fill="#ffffff">Pronto</text>
 </svg>

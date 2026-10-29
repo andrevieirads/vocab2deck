@@ -50,7 +50,7 @@ end
 
 --[[--
 Cria (ou acha) o item e abre o editor.
-@param cap { text, prev, next, book, lookup }  lookup = resultado do dicionário já na tela
+@param cap { text, prev, next, book, lookup, origin }  lookup = resultado do dicionário já na tela
 --]]
 function C.open(host, cap)
     local text = U.squash(cap.text or "")
@@ -61,6 +61,7 @@ function C.open(host, cap)
     local store = host:getStore()
     local vkey, created = store:addCapture{
         word = text, prev = cap.prev, next = cap.next, highlight = text, book = cap.book,
+        origin = cap.origin,
     }
     if created and cap.lookup then
         store:setLookup(vkey, cap.lookup)
@@ -69,6 +70,19 @@ function C.open(host, cap)
         Safe.message(_("Este texto já está no plugin; abrindo o cartão que existe."), 2)
     end
     host:getApp():open("vocab2deck/screens/editor", { vkey = vkey, is_new = created, lookup_on_open = created and not cap.lookup })
+end
+
+--[[--
+"＋ Adicionar cartão" no Início: pede a frente (palavra ou trecho) e abre o
+mesmo editor de Novo cartão. Sem frase de contexto; com o título do livro se
+houver um aberto.
+--]]
+function C.manual(host)
+    require("vocab2deck/ui").editText(_("Frente do cartão (palavra ou trecho)"), "", function(text)
+        Safe.run(_("adicionar cartão"), C.open, host, {
+            text = text, book = C.bookTitle(host.ui), origin = "manual",
+        })
+    end, { multiline = true })
 end
 
 -- Menu da seleção de texto (trecho selecionado no livro).
