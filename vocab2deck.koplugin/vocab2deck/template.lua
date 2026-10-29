@@ -124,12 +124,43 @@ function T.fields(item, list, opts)
     return out
 end
 
--- O campo de definição tem texto? (sem campo de definição visível, conta como sim)
-function T.hasDefinition(fields)
+-- Campo que conta como "o que o cartão ensina" no verso: a definição, ou um
+-- campo escrito por você (campo seu, campo extra, ou campo do plugin editado).
+-- A frase e o livro gerados sozinhos não contam.
+local function teaches(f)
+    if f.side ~= "back" then return false end
+    if f.source == "definition" or f.source == "none" or f.extra then return true end
+    return f.edited and f.source ~= "book"
+end
+
+--[[--
+Texto curto do verso para listas: a definição, ou o primeiro campo escrito por
+você no verso (ex.: Notas de um cartão criado no livro). nil se não houver.
+--]]
+function T.backPreview(fields)
     for _, f in ipairs(fields) do
-        if f.source == "definition" and f.side ~= "none" then return U.trim(f.value or "") ~= "" end
+        if f.source == "definition" and teaches(f) and U.trim(f.value or "") ~= "" then return f.value end
     end
-    return true
+    for _, f in ipairs(fields) do
+        if teaches(f) and U.trim(f.value or "") ~= "" then return f.value end
+    end
+    return nil
+end
+
+--[[--
+O cartão tem o que ensinar no verso? (definição ou um campo escrito por você)
+Sem nenhum campo assim no modelo (ex.: Definição removida e nada no verso),
+conta como sim: o verso é o que o modelo mandar.
+--]]
+function T.hasDefinition(fields)
+    local any = false
+    for _, f in ipairs(fields) do
+        if teaches(f) then
+            any = true
+            if U.trim(f.value or "") ~= "" then return true end
+        end
+    end
+    return not any
 end
 
 local function join(fields, side, placeholder)

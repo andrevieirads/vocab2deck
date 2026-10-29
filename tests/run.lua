@@ -351,6 +351,7 @@ scenario("modelo: novo campo para todos e ocultar Livro → atualizar sem perder
     tapText("^Livro$")
     pressDialogButton(LAST_buttondialog, "Não mostrar")
     tapText("^%+ Campo")
+    pressDialogButton(LAST_buttondialog, "Campo novo, vazio")
     LAST_inputdialog._input = "Sinônimos"
     pressDialogButton(LAST_inputdialog, "Salvar")
     pressDialogButton(LAST_buttondialog, "Verso")
@@ -385,7 +386,7 @@ scenario("cartão apagado no Anki Viewer não volta (até pedir)", function()
     local AV = loadAV()
     AV.deleteCard(tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:serendipity'")))
     p:onVocab2DeckOpen()
-    check(has("1 cartões apagados no Anki Viewer"), "aviso: " .. screenText())
+    check(has("1 cartões apagados no Anki Viewer (Sincronizar os cria de novo)"), "aviso: " .. screenText())
     p:forgetDeleted()
     check(contains(info(), "1 cartões serão recriados"), "aviso de recriação")
     UIM.stack = {}
@@ -417,7 +418,7 @@ scenario("Inbox como está, sem definição pula, falha e interrupção", functi
     p:onVocab2DeckExport()
     tapText("Também enviar os")
     tapText("^Exportar %(")
-    check(has("Sem definição"), "zyzzyva pulada sem definição: " .. screenText())
+    check(has("Verso vazio"), "zyzzyva pulada sem definição: " .. screenText())
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 12, "as 12 com definição")
     eq(p:getStore():get("w:zyzzyva").status, "inbox", "a sem definição fica no Inbox")
 end)
@@ -665,7 +666,7 @@ scenario("passo .apkg: ankiviewer/shared/Vocab2Deck.apkg com Vocab2Deck::Livro",
     check(io.open(path .. ".part", "rb") == nil, "nenhum temporário sobrando")
 end)
 
-scenario("itens Revisados com cartão já no Anki Viewer: viram No baralho e o .apkg nasce ao fechar", function()
+scenario("No baralho ↔ Inbox/Revisado: exportar de novo atualiza sem duplicar; .apkg nasce ao fechar", function()
     local data = freshEnv()
     makeVocab(data, WORDS)
     local p = newPlugin(fakeDict(DEFS), fakeAV())
@@ -674,20 +675,14 @@ scenario("itens Revisados com cartão já no Anki Viewer: viram No baralho e o .
     UIM.stack = {}
     p:onVocab2DeckExport()
     tapText("^Exportar %(3%)")
-    -- o estado visto no aparelho: cartões no Anki Viewer, itens de volta a Revisado, sem pacote
+    local qid = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:quixotic'"))
+    loadAV().updateCardScheduling({ id = qid, ease = 2.5, interval = 0, reps = 0, lapses = 0 }, "easy", os.time(), 0)
+    local before = sched(data, qid)
     p.app:closeAll()
     local path = data .. "/ankiviewer/shared/Vocab2Deck.apkg"
     os.remove(path)
-    p:getStore():setStatus({ "w:serendipity", "w:quixotic", "w:ephemeral" }, "ready")
-    UIM.stack = {}
-    p:onVocab2DeckOpen()
-    eq(p:getStore():counts().deck, 3, "voltaram para ✓ No baralho")
-    check(has("Exportar (0)"), "nada para exportar de novo: " .. screenText())
-    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "sem duplicar no Anki Viewer")
-    p.app:closeAll()
-    local r = checkApkg(path)
-    eq(r.notes, "3", "pacote gravado ao fechar, mesmo sem nada novo: " .. tostring(r.raw))
-    -- lista No baralho: seleção só oferece Descartar
+
+    -- da lista No baralho, seleção em massa: ○ Inbox e ● Revisado voltaram
     UIM.stack = {}
     p:onVocab2DeckOpen()
     tapText("^No baralho")
@@ -696,7 +691,120 @@ scenario("itens Revisados com cartão já no Anki Viewer: viram No baralho e o .
     tapAt(target.dimen.x + 2, target.dimen.y + 2, "hold")
     local exact = {}
     for _, t in ipairs(texts()) do exact[t] = true end
-    check(exact["× Descartar"] and not exact["○ Inbox"] and not exact["● Revisado"], "seleção no baralho: " .. screenText())
+    check(exact["× Descartar"] and exact["○ Inbox"] and exact["● Revisado"], "seleção no baralho: " .. screenText())
+    tapText("Selecionar todas")
+    tapText("^● Revisado$")
+    eq(p:getStore():counts().ready, 3, "3 de volta a Revisado")
+    -- abrir o plugin não os devolve ao baralho sozinho
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    eq(p:getStore():counts().ready, 3, "continuam Revisados ao abrir")
+    -- muda o texto de um deles e exporta de novo
+    p:getStore():setOverride("w:quixotic", "definition", "idealista demais")
+    tapText("^Exportar %(3%)")
+    tapText("^Exportar %(3%)")
+    check(has("Já tinham cartão: atualizados, progresso mantido"), "resultado: " .. screenText())
+    eq(p:getStore():counts().deck, 3, "voltaram para ✓ No baralho")
+    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "sem duplicar no Anki Viewer")
+    check(contains(scalar(data, "SELECT back FROM cards WHERE id = " .. qid), "idealista demais"), "texto novo no cartão")
+    eq(sched(data, qid), before, "agendamento intacto")
+    local r = checkApkg(path)
+    eq(r.notes, "3", "pacote gravado na exportação: " .. tostring(r.raw))
+
+    -- um item editado no Editar (single) também tem ○ Inbox / ● Revisado
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^No baralho")
+    tapText("^quixotic")
+    check(has("○ Inbox") and has("● Revisado") and has("× Descartar"), "botões no item do baralho: " .. screenText())
+    -- e com o pacote apagado, fechar o plugin grava de novo
+    os.remove(path)
+    p.app:closeAll()
+    eq(checkApkg(path).notes, "3", "pacote gravado ao fechar")
+end)
+
+scenario("Sincronizar com o Anki Viewer: recria, atualiza e move sem mexer no agendamento", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local p = newPlugin(fakeDict(DEFS), fakeAV())
+    p:onVocab2DeckOpen()
+    p:getStore():setStatus({ "w:serendipity", "w:quixotic", "w:ephemeral" }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckExport()
+    tapText("^Exportar %(3%)")
+    local AV = loadAV()
+    local qid = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:quixotic'"))
+    AV.updateCardScheduling({ id = qid, ease = 2.5, interval = 0, reps = 0, lapses = 0 }, "good", os.time(), 0)
+    local before = sched(data, qid)
+    -- apagado no Anki Viewer + texto mexido fora daqui + baralho novo nas configurações
+    AV.deleteCard(tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:ephemeral'")))
+    local conn = SQ3.open(avDbPath(data)); conn:exec("UPDATE cards SET back = 'mexido fora' WHERE id = " .. qid); conn:close()
+    p.settings:set("deck_name", "Meu Vocabulário")
+    p.settings:set("on_change", "ask")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    snap("11_inicio_sincronizar")
+    noOffscreen("início com sincronizar")
+    tapText("^Sincronizar %(3%)")
+    check(contains(info(), "1 cartões que faltavam foram criados") and contains(info(), "agendamento"), "aviso: " .. tostring(info()))
+    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "o apagado voltou, sem duplicar")
+    check(contains(scalar(data, "SELECT back FROM cards WHERE id = " .. qid), "exceedingly idealistic"), "texto refeito pelo plugin")
+    eq(sched(data, qid), before, "agendamento intacto")
+    eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards c JOIN decks d ON d.id = c.deck_id WHERE d.name = 'Meu Vocabulário'")), 3, "todos no baralho novo")
+    eq(checkApkg(data .. "/ankiviewer/shared/Vocab2Deck.apkg").notes, "3", "pacote regravado")
+end)
+
+scenario("destaque com só Notas no verso: lista mostra o verso e exporta; campos: remover, renomear, re-adicionar", function()
+    local data = freshEnv()
+    makeVocab(data, WORDS)
+    local reader = fakeReader()
+    local p = newPlugin(fakeDict(DEFS), fakeAV(), reader)
+    p:onReaderReady()
+    p:syncVocab()
+    local hl = reader.highlight
+    hl.selected_text = { text = "Entre os produtos dos Cro-magnon" }
+    hl.buttons.vocab2deck_add(hl).callback()
+    -- escreve em Notas (o último "Toque para preencher"), não na Definição
+    tapLast("Toque para preencher")
+    LAST_inputdialog._input = "ferramentas de osso"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    tapText("^Salvar no Inbox")
+    local key = "w:entre os produtos dos cro-magnon"
+    p:getStore():setStatus({ key }, "ready")
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^Revisados")
+    check(has("ferramentas de osso") and not has("sem definição"), "a lista mostra o verso: " .. screenText())
+    tapText("^Exportar %(1%)")
+    tapText("^Exportar %(1%)")
+    check(has("1 cartões novos adicionados."), "exportou o destaque só com Notas: " .. screenText())
+    check(contains(scalar(data, "SELECT back FROM cards WHERE source_key = 'vocab2deck:f:" .. key .. "'"), "ferramentas de osso"), "verso com as Notas")
+
+    -- campos: renomear Notas, remover Livro (do plugin) e adicionar de volta
+    UIM.stack = {}
+    p:onVocab2DeckOpen()
+    tapText("^Campos$")
+    tapText("^Notas$")
+    pressDialogButton(LAST_buttondialog, "Renomear")
+    LAST_inputdialog._input = "Comentário"
+    pressDialogButton(LAST_inputdialog, "Salvar")
+    check(has("Comentário"), "renomeado")
+    tapText("^− Campo")
+    pressDialogButton(LAST_buttondialog, "− Livro")
+    confirm()
+    check(not has("Livro"), "Livro removido: " .. screenText())
+    tapText("^%+ Campo")
+    pressDialogButton(LAST_buttondialog, "Livro")
+    pressDialogButton(LAST_buttondialog, "Verso")
+    check(has("Livro"), "Livro adicionado de volta")
+    -- remover a Definição: a revisão avisa em vez de oferecer sentidos
+    tapText("^Definição$")
+    pressDialogButton(LAST_buttondialog, "Remover este campo")
+    confirm()
+    UIM.stack = {}
+    p:getStore():setStatus({ "w:serendipity" }, "inbox")
+    p:openReview()
+    check(has("O campo Definição foi removido do modelo"), "aviso na revisão: " .. screenText())
 end)
 
 -- Rodada com cópias dos bancos de um aparelho (V2D_REPLAY=pasta com settings/ e ankiviewer/).

@@ -75,7 +75,7 @@ function Home:notes()
         out[#out + 1] = T(_("✓ %1 cartões movidos para o baralho certo (progresso mantido)."), a.moved)
     end
     if self.pending.deleted > 0 then
-        out[#out + 1] = T(_("%1 cartões apagados no Anki Viewer (não serão recriados)."), self.pending.deleted)
+        out[#out + 1] = T(_("%1 cartões apagados no Anki Viewer (Sincronizar os cria de novo)."), self.pending.deleted)
     end
     if s and s.filter_note then out[#out + 1] = s.filter_note end
     return out
@@ -111,10 +111,11 @@ function Home:build(w, h)
         { text = _("Configurações"), callback = function() self.host:showSettings() end },
     }, { size = Kit.SIZE.small }))
     table.insert(body, Kit.vspan(Kit.dp(10)))
-    table.insert(body, Kit.button{
-        text = _("Estudar no Anki Viewer"), width = cw,
-        callback = function() self.host:studyNow() end,
-    })
+    table.insert(body, Kit.buttonRow(cw + 2 * Kit.PAD, {
+        { text = _("Estudar no Anki Viewer"), callback = function() self.host:studyNow() end },
+        { text = T(_("Sincronizar (%1)"), self.counts.deck), enabled = self.counts.deck > 0,
+          callback = function() self.host:syncDeck() end },
+    }, { size = Kit.SIZE.small }))
     return VerticalGroup:new{
         align = "left",
         header,

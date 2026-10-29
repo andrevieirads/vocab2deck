@@ -124,6 +124,29 @@ function Sync.updateOps(changed, only_unedited)
     return ups
 end
 
+--[[--
+Para "Sincronizar com o Anki Viewer": todo cartão vivo cujo texto no Anki
+Viewer difere do texto que os campos dão hoje (inclusive editados fora daqui).
+--]]
+function Sync.syncUpdates(items, state, model, opts)
+    local cards = (state or {}).cards or {}
+    local ups = {}
+    for _, item in ipairs(items) do
+        local rendered
+        for _, side in ipairs({ "f", "r" }) do
+            local c = cards[item.vkey .. "|" .. side]
+            if c and c.card_id then
+                rendered = rendered or Sync.renderItem(item, model, opts)
+                local want = rendered[side]
+                if want.front ~= c.front or want.back ~= c.back or want.front ~= c.written_front or want.back ~= c.written_back then
+                    ups[#ups + 1] = { vkey = item.vkey, side = side, card_id = c.card_id, front = want.front, back = want.back }
+                end
+            end
+        end
+    end
+    return ups
+end
+
 -- Cartões vivos de um item que precisam do texto novo (depois de editar os campos).
 function Sync.itemUpdates(item, state, model, opts)
     local plan = Sync.plan({ item }, state, model, opts)

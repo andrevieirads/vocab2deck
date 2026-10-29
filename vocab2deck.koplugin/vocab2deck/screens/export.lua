@@ -101,8 +101,11 @@ function Export:resultBody(cw)
     local rows = {
         Kit.row{ width = cw, symbol = "✓", text = _("Palavras que foram para o baralho"), value = r.items },
     }
+    if (r.resent or 0) > 0 then
+        rows[#rows + 1] = Kit.row{ width = cw, symbol = "✓", text = _("Já tinham cartão: atualizados, progresso mantido"), value = r.resent }
+    end
     if r.skipped_nodef > 0 then
-        rows[#rows + 1] = Kit.row{ width = cw, symbol = "—", text = _("Sem definição (ficaram onde estavam)"), value = r.skipped_nodef }
+        rows[#rows + 1] = Kit.row{ width = cw, symbol = "—", text = _("Verso vazio (ficaram onde estavam)"), value = r.skipped_nodef }
     end
     if r.lookup_errors > 0 then
         rows[#rows + 1] = Kit.row{ width = cw, symbol = "×", text = _("Busca no dicionário falhou"), value = r.lookup_errors }
@@ -123,7 +126,7 @@ function Export:resultBody(cw)
     end
     if r.skipped_nodef > 0 then
         table.insert(g, Kit.vspan(Kit.dp(8)))
-        table.insert(g, Kit.textbox(_("Para exportar palavras sem definição, escreva a definição em \"✎ Campos do cartão\" ou ative Configurações ▸ Palavra sem definição ▸ Criar cartão."),
+        table.insert(g, Kit.textbox(_("Para exportar cartões com o verso vazio, escreva a definição (ou outro campo do verso) em \"✎ Campos do cartão\", ou ative Configurações ▸ Palavra sem definição ▸ Criar cartão."),
             Kit.ui(Kit.SIZE.small), cw, { fgcolor = Kit.GREY_DARK }))
     end
     return g

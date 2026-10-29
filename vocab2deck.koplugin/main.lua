@@ -226,7 +226,6 @@ function Vocab2Deck:syncVocab()
         skip = function(w) return VocabReader.isLearned(w, opts.learned_streak) end
     end
     local res = self:getStore():syncFromVocab(vb.words, { exported = exported, definitions = definitions, skip = skip })
-    self:normalizeStatuses(state)
     if #vb.words == 0 then
         res.error = _("O Vocabulary Builder está vazio. Consulte palavras no dicionário durante a leitura para que elas cheguem aqui.")
     elseif opts.only_unlearned and not vb.has_streak then
@@ -238,11 +237,11 @@ function Vocab2Deck:syncVocab()
 end
 
 --[[--
-Item com cartão no Anki Viewer está no baralho, seja qual for o status
-guardado (ex.: voltou ao Inbox e foi revisado de novo). Sem isso a
-exportação não cria nada (o cartão já existe) e o item ficaria ● Revisado
-para sempre. Descartados ficam como estão.
-@treturn number quantos foram corrigidos
+Na exportação: um ● Revisado que já tem cartão no Anki Viewer (ex.: saiu do
+baralho para ser revisado de novo) não ganha cartão novo; o dele recebe o
+texto atual (com o progresso) e o item volta a ✓ No baralho. Sem isso ele
+ficaria ● Revisado para sempre. Inbox e Descartados ficam como estão.
+@treturn number quantos voltaram ao baralho
 --]]
 function Vocab2Deck:normalizeStatuses(state)
     state = state or self:deckState()
@@ -251,7 +250,7 @@ function Vocab2Deck:normalizeStatuses(state)
         if c.card_id then live[key:match("^(.*)|[fr]$")] = true end
     end
     local fix = {}
-    for __, r in ipairs(self:getStore():query({ statuses = { inbox = true, ready = true } })) do
+    for __, r in ipairs(self:getStore():query({ statuses = { ready = true } })) do
         if live[r.vkey] then fix[#fix + 1] = r.vkey end
     end
     if #fix > 0 then
@@ -500,7 +499,6 @@ function Vocab2Deck:_export(Trapper, run_opts)
     local model = self:model()
     local opts = self:planOptions({ include_inbox = run_opts.include_inbox })
     local state = self:deckState()
-    self:normalizeStatuses(state)
     local plan = Sync.plan(store:all(), state, model, opts)
     local summary = {
         added = 0, items = 0, updated = 0, skipped_nodef = 0, lookup_errors = 0, aborted = false, remaining = 0,
@@ -546,12 +544,19 @@ function Vocab2Deck:_export(Trapper, run_opts)
     local ops, stats = Sync.insertOps(processed, model, opts)
     summary.skipped_nodef = stats.skipped_nodef
     local on_change = self.settings:get("on_change")
-    if #plan.changed > 0 then
+    -- ● Revisados que já têm cartão: você pediu para exportar de novo, então o
+    -- cartão recebe o texto atual (o progresso fica); os outros seguem a configuração
+    local resent, others = {}, {}
+    for __, c in ipairs(plan.changed) do
+        if c.item.status == "ready" then resent[#resent + 1] = c else others[#others + 1] = c end
+    end
+    ops.updates = Sync.updateOps(resent, false)
+    if #others > 0 then
         if on_change == "update" then
-            ops.updates = Sync.updateOps(plan.changed, true)
-            summary.edited_kept = plan.edited_changed
+            for __, u in ipairs(Sync.updateOps(others, true)) do ops.updates[#ops.updates + 1] = u end
+            for __, c in ipairs(others) do if c.edited then summary.edited_kept = summary.edited_kept + 1 end end
         elseif on_change ~= "ignore" then
-            summary.changes_pending = plan.changed
+            summary.changes_pending = others
         end
     end
     if on_change ~= "ignore" then ops.moves = plan.moves end
@@ -571,6 +576,8 @@ function Vocab2Deck:_export(Trapper, run_opts)
         summary.backup = res.backup
         self._session_backup = true
     end
+    -- ● Revisados que já tinham cartão voltam a ✓ No baralho
+    summary.resent = self:normalizeStatuses(self:deckState())
 
     -- 4. pacote para o Anki (ankiviewer/shared/Vocab2Deck.apkg); falhar aqui não desfaz nada
     local apkg_path, apkg_err = self:writeApkg()
@@ -578,6 +585,51 @@ function Vocab2Deck:_export(Trapper, run_opts)
     summary.apkg = apkg_path
     summary.apkg_error = apkg_err and Safe.shortError(apkg_err) or nil
     return summary
+end
+
+--[[--
+"Sincronizar com o Anki Viewer" (Início): manda de novo os itens ✓ No baralho.
+* cartão que existe: recebe o texto atual (inclusive os editados fora daqui);
+  ease/interval/due/reps/lapses não são tocados
+* cartão que sumiu do Anki Viewer (apagado lá): é criado de novo, como novo
+* cartão fora do baralho das configurações: é movido (o progresso vai junto)
+Depois regrava o Vocab2Deck.apkg.
+--]]
+function Vocab2Deck:syncDeck()
+    local msg = UI.busy(_("Sincronizando com o Anki Viewer…"))
+    local ok, res = pcall(function()
+        local status = self:writer():check()
+        if status == "old_schema" or status == "bad_schema" then error(UI.deckError(status), 0) end
+        if status == "ok" then self:writer():forgetDeleted() end
+        local state = self:deckState()
+        local model, opts = self:model(), self:planOptions()
+        local items = self:getStore():all({ statuses = { deck = true } })
+        local plan = Sync.plan(items, state, model, opts)
+        local ops = Sync.insertOps(plan.new, model, opts)
+        ops.updates = Sync.syncUpdates(items, state, model, opts)
+        ops.moves = plan.moves
+        local r = DeckWriter.apply(self:writer(), ops, { backup_done = self._session_backup })
+        self._session_backup = true
+        local apkg, apkg_err = self:writeApkg()
+        self._apkg_dirty = false
+        return { created = r.added + r.adopted, updated = r.updated, moved = r.moved, total = #items,
+                 apkg = apkg, apkg_err = apkg_err }
+    end)
+    UIManager:close(msg)
+    if not ok then
+        Safe.message(T(_("A sincronização falhou; nada foi alterado:\n%1"), Safe.shortError(res)))
+        return
+    end
+    local lines = { T(_("%1 palavras no baralho sincronizadas."), res.total) }
+    if res.updated > 0 then lines[#lines + 1] = T(_("%1 cartões com texto atualizado."), res.updated) end
+    if res.created > 0 then lines[#lines + 1] = T(_("%1 cartões que faltavam foram criados."), res.created) end
+    if res.moved > 0 then lines[#lines + 1] = T(_("%1 cartões movidos para o baralho certo."), res.moved) end
+    if res.updated + res.created + res.moved == 0 then lines[#lines + 1] = _("Tudo já estava igual.") end
+    lines[#lines + 1] = _("O agendamento dos cartões no Anki Viewer não mudou.")
+    if res.apkg_err then lines[#lines + 1] = T(_("O pacote Vocab2Deck.apkg não foi gravado: %1"), Safe.shortError(res.apkg_err)) end
+    Safe.message(table.concat(lines, "\n"), 6)
+    local top = self.app and self.app:topScreen()
+    if top then top:onRevealed() end
 end
 
 -- Atualiza o texto de cartões alterados (progresso mantido).
