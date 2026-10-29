@@ -80,6 +80,11 @@ local function findOnPages(text)
     end
     return has(text)
 end
+-- ⋮ do Início: abre o menu e escolhe um item (Campos, Importar, Configurações)
+local function homeMenu(label)
+    UIM:top():showMenu()
+    pressDialogButton(LAST_buttondialog, label)
+end
 -- toca na última ocorrência de um texto na tela
 local function tapLast(pattern)
     local n = 0
@@ -247,13 +252,19 @@ scenario("Início → Revisar: um por tela, escolher sentido, Revisado / Pular /
     S.p:onVocab2DeckOpen()
     check(has("Inbox") and has("Revisados") and has("No baralho"), "status no Início: " .. screenText())
     check(has("3 palavras novas vieram do Vocabulary Builder"), "aviso das palavras novas")
-    -- ordem dos botões: Buscar · Sincronizar · Configurações / Adicionar · Campos · Estudar / Revisar · Exportar
-    local order, want = {}, { "⌕ Buscar", "Sincronizar (0)", "Configurações", "＋ Adicionar", "Campos", "Estudar",
-                              "Revisar (3)", "Exportar (0)" }
+    -- ordem do Início: hoje · funil · Revisar / Exportar · baralhos · barra de baixo
+    local order, want = {}, { "VOCABULÁRIO", "Flashcards", "PARA ESTUDAR HOJE", "Estudar agora", "DO KINDLE PARA O ANKI",
+                              "Inbox", "Revisados", "No baralho", "Descartados", "Revisar (3)", "Exportar (0)",
+                              "BARALHOS", "Adicionar", "Buscar", "Sincronizar", "Importar" }
     local set = {}
     for _, w in ipairs(want) do set[w] = true end
     for _, t in ipairs(texts()) do if set[t] then order[#order + 1] = t end end
-    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem dos botões do Início")
+    eq(table.concat(order, " | "), table.concat(want, " | "), "ordem do Início")
+    -- ⋮ : Campos · Importar · Configurações
+    UIM:top():showMenu()
+    local menu_items = table.concat(dialogButtons(LAST_buttondialog), " | ")
+    eq(menu_items, "Campos | Importar | Configurações | Fechar", "menu ⋮")
+    pressDialogButton(LAST_buttondialog, "Fechar")
     eq(S.dict.lookups, 0, "abrir não busca no dicionário")
     noOffscreen("início")
     snap("1_inicio")
@@ -365,7 +376,7 @@ scenario("modelo: novo campo para todos e ocultar Livro → atualizar sem perder
     local id = tonumber(scalar(data, "SELECT id FROM cards WHERE source_key = 'vocab2deck:f:w:quixotic'"))
     local before = sched(data, id)
     p:onVocab2DeckOpen()
-    tapText("^Campos$")
+    homeMenu("Campos")
     check(has("Palavra") and has("Definição") and not has("Repetir a frente no verso"), "modelo: " .. screenText())
     noOffscreen("modelo")
     snap("8_modelo")
@@ -766,7 +777,10 @@ scenario("Sincronizar com o Anki Viewer: recria, atualiza e move sem mexer no ag
     p:onVocab2DeckOpen()
     snap("11_inicio_sincronizar")
     noOffscreen("início com sincronizar")
-    tapText("^Sincronizar %(3%)")
+    local badge = false
+    for _, t in ipairs(texts()) do if t == "3" then badge = true end end
+    check(badge, "bolinha com os 3 do baralho no Sincronizar")
+    tapText("^Sincronizar$")
     check(contains(info(), "1 cartões que faltavam foram criados") and contains(info(), "agendamento"), "aviso: " .. tostring(info()))
     eq(tonumber(scalar(data, "SELECT COUNT(*) FROM cards")), 3, "o apagado voltou, sem duplicar")
     check(contains(scalar(data, "SELECT back FROM cards WHERE id = " .. qid), "exceedingly idealistic"), "texto refeito pelo plugin")
@@ -804,7 +818,7 @@ scenario("destaque com só Notas no verso: lista mostra o verso e exporta; campo
     -- campos: renomear Notas, remover Livro (do plugin) e adicionar de volta
     UIM.stack = {}
     p:onVocab2DeckOpen()
-    tapText("^Campos$")
+    homeMenu("Campos")
     tapText("^Notas$")
     pressDialogButton(LAST_buttondialog, "Renomear")
     LAST_inputdialog._input = "Comentário"
@@ -911,7 +925,7 @@ scenario("Início: ＋ Adicionar cartão tem tipo próprio só com Frente e Vers
     p:onVocab2DeckOpen()
     noOffscreen("início com adicionar cartão")
     snap("13_inicio_adicionar")
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
     LAST_inputdialog._input = "carpe diem"
     pressDialogButton(LAST_inputdialog, "Salvar")
     local exact = {}
@@ -978,7 +992,7 @@ scenario("Adicionar cartão com frase: o verso não copia a frente", function()
     -- um dicionário que devolve o próprio texto como "definição"
     local p = newPlugin(fakeDict({ ["tempus fugit"] = "tempus fugit" }), fakeAV(), fakeReader())
     p:onVocab2DeckOpen()
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
     LAST_inputdialog._input = "O tempo passa depressa quando a gente lê"
     pressDialogButton(LAST_inputdialog, "Salvar")
     check(has("O tempo passa depressa quando a gente lê") and has("Toque para preencher"), "verso vazio no editor: " .. screenText())
@@ -998,7 +1012,7 @@ scenario("Adicionar cartão com frase: o verso não copia a frente", function()
     -- dicionário que ecoa o texto: o verso fica vazio
     UIM.stack = {}
     p:onVocab2DeckOpen()
-    tapText("^＋ Adicionar$")
+    tapText("^Adicionar$")
     LAST_inputdialog._input = "tempus fugit"
     pressDialogButton(LAST_inputdialog, "Salvar")
     check(has("Toque para preencher"), "verso não preenchido com a frente: " .. screenText())
@@ -1179,7 +1193,7 @@ scenario("Início: lista de baralhos, Importar e opções", function()
     UIM.stack = {}
     p:onVocab2DeckOpen()
     check(has("BARALHOS") and has("Livro A") and has("Livro B"), "baralhos no Início: " .. screenText())
-    check(has("2 para estudar · 2 cartões"), "contagem do baralho")
+    check(has("2 cartões") and has("1 cartão"), "contagem do baralho")
     noOffscreen("início com baralhos")
     snap("15_inicio_baralhos")
     local id_b = tonumber(scalar(data, "SELECT id FROM decks WHERE name = 'Livro B'"))

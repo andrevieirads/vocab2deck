@@ -1,4 +1,4 @@
-# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.1.1
+# Vocabulário → Flashcards (`vocab2deck.koplugin`) · versão 3.2.0
 
 Plugin do KOReader que leva as palavras do **Vocabulary Builder** até o **Anki Viewer** no
 fluxo do **KR2Anki**:
@@ -136,19 +136,33 @@ Todas no estilo do KR2Anki: cabeçalho com `‹`, botões de pelo menos ~9 mm, a
 invertida (branco no preto), sem animação. Deslizar para os lados, ou as teclas de página,
 troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
 
-**Início:**
-- Status com as contagens, cada linha abre a lista daquele status:
-  ○ Inbox · ● Revisados · ✓ No baralho · × Descartados.
-- Avisos: palavras novas que vieram do Vocabulary Builder, cartões apagados, erros.
-- *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
-- Duas linhas de botões, embaixo dos status:
-  - **⌕ Buscar · Sincronizar (N) · Configurações**
-  - **＋ Adicionar · Campos · Importar · Estudar**
+**Início** (desenho de `flashcards-redesign.svg`):
+- **Cabeçalho:** `‹` (fecha), *VOCABULÁRIO / Flashcards* e **⋮**, um menu com *Campos*,
+  *Importar* e *Configurações*.
+- **Para estudar hoje:** o número de cartões para estudar nos baralhos deste plugin (ou em
+  todos, se nada foi exportado ainda), "no baralho X" ou "em N baralhos", e o botão
+  **Estudar agora**. Ele abre a tela de estudo nos baralhos deste plugin (com mais de um,
+  pergunta qual; sem nenhum exportado, abre no último baralho estudado).
+- **Do Kindle para o Anki:** ○ Inbox › ● Revisados › ✓ No baralho | × Descartados, com as
+  contagens (zero fica em cinza). Tocar num deles abre a lista daquele status.
+- Logo abaixo:
+  - os avisos (palavras novas que vieram do Vocabulary Builder, cartões apagados, erros), ou
+    *Nenhuma palavra nova para revisar.*;
+  - **Revisar (N)** · **Exportar (N)**, quando há palavras no Inbox ou Revisadas;
+  - *Atualizar N cartões alterados…*, quando há cartões no baralho com texto novo.
+- **Baralhos:** todos os baralhos do Anki Viewer (os deste plugin e os importados): nome,
+  "N cartões" (ou "N cartões · em dia") e uma bolinha preta com os cartões para estudar.
+  - Tocar num baralho abre a tela de estudo nele.
+  - Toque longo: *Estudar*, *Mapeamento de campos* (só baralhos importados de `.apkg`) e
+    *Apagar baralho* (com confirmação; apaga os cartões e o progresso).
+  - Em retrato, a lista ocupa o espaço que sobra embaixo; em paisagem, uma coluna à
+    direita. Se não couberem todos, a última linha é *Todos os baralhos (N)…*.
+- **Barra de baixo** (ícones desenhados pelo plugin, sem depender da fonte do aparelho):
+  **Adicionar · Buscar · Sincronizar · Importar**. Sincronizar mostra numa bolinha quantos
+  itens estão no baralho e fica cinza quando não há nenhum.
   - *Importar* abre a lista de `.apkg` da pasta `koreader/ankiviewer/shared` (o *Import* do
     Anki Viewer, com o mapeamento de campos e Merge / Replace).
-  - *Estudar* abre a tela de estudo nos baralhos deste plugin (com mais de um, pergunta
-    qual; sem nenhum exportado, abre no último baralho estudado).
-  - *＋ Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
+  - *Adicionar* pede a frente (uma palavra ou um trecho) e abre o editor de
     **Novo cartão** com um **tipo próprio, só com Frente e Verso**:
     - **Frente** é o texto digitado.
     - **Verso** começa com a definição do dicionário (quando o texto tem até 4 palavras) e
@@ -156,13 +170,12 @@ troca de página. As prévias aproximadas estão em `tests/previews/index.html`.
   - Esse tipo não depende da tela Campos: mudar o modelo não afeta esses cartões.
   - No editor deles, + Campo e − Campo valem só para campos criados naquele cartão.
   - *Salvar no Inbox* guarda o cartão; *Cancelar* descarta.
-- **Sincronizar (N)** manda de novo os itens ✓ No baralho.
+- **Sincronizar** manda de novo os itens ✓ No baralho.
   - Cartões que existem recebem o texto atual, mesmo os mexidos fora do plugin; **o
     agendamento não muda**.
   - Cartões que sumiram do Anki Viewer são criados de novo.
   - Cartões fora do baralho certo são movidos.
   - O `Vocab2Deck.apkg` é regravado.
-- Barra de baixo: **Revisar (N)** · **Exportar (N)**.
 
 **Lista:**
 - Linhas paginadas com a palavra, o livro, o **verso** curto e o símbolo do status. O verso
@@ -238,14 +251,6 @@ cartões de *＋ Adicionar cartão* têm o tipo fixo Frente/Verso):
   interrompe.
 - Resultado: N cartões novos, palavras sem definição (ficam onde estavam), falhas e
   backup, com os botões **Estudar** · Fechar.
-
-- **Baralhos:** todos os baralhos do Anki Viewer (os deste plugin e os importados), com
-  quantos estão para estudar e quantos cartões têm.
-  - Tocar num baralho abre a tela de estudo nele.
-  - Toque longo: *Estudar*, *Mapeamento de campos* (só baralhos importados de `.apkg`) e
-    *Apagar baralho* (com confirmação; apaga os cartões e o progresso).
-  - Em retrato, a lista ocupa o espaço que sobra embaixo; em paisagem, uma coluna à
-    direita. Se não couberem todos, a última linha é *Todos os baralhos (N)…*.
 
 **Estudo** (tela do Anki Viewer embutido):
 - Barra de cima: **‹ Voltar** (fecha o estudo e mostra o Início, com as contagens
@@ -407,7 +412,7 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
    - Deslize para a direita e mude uma decisão.
    - No resumo, toque em **Exportar (3)**, depois em **Exportar**. Esperado: *3 cartões
      novos adicionados.*
-   - Toque em **Estudar** (ou no baralho, na lista *Baralhos* do Início). Esperado: abre a
+   - Toque em **Estudar agora** (ou no baralho, na lista *Baralhos* do Início). Esperado: abre a
      tela de estudo, com *‹ Voltar | Fechar* em cima; a frente mostra a palavra e a frase;
      *Show answer* mostra a frente, o separador e o verso.
    - Responda um cartão e toque em **‹ Voltar**. Esperado: o Início volta, com a contagem
@@ -415,7 +420,7 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
      fecha.
    - No Início, toque em **Importar** e importe um `.apkg` seu: ele aparece em *Baralhos*.
      Toque longo nele ▸ *Apagar baralho* o remove.
-   - Em **Configurações**, mude *Estudo: cartões novos por dia* e abra o estudo: vale o
+   - Em **⋮ ▸ Configurações**, mude *Estudo: cartões novos por dia* e abra o estudo: vale o
      novo limite.
 3. **Segunda exportação sem novas:** Exportar mostra **0** e o botão fica desativado. No
    Anki Viewer, continuam 3 cartões e os revisados mantêm os intervalos.
@@ -424,7 +429,7 @@ Antes, copie `koreader/ankiviewer/ankiviewer.sqlite3` para o computador.
      No Anki Viewer o verso muda, e o intervalo continua o mesmo.
    - **+ Campo ▸ Só neste cartão**, *Exemplo*, *Verso* e escreva algo. Use
      **Pré-visualizar** para conferir.
-   - Em **Campos** (modelo), mude *Livro* para *Não mostrar* e volte ao Início. Esperado:
+   - Em **⋮ ▸ Campos** (modelo), mude *Livro* para *Não mostrar* e volte ao Início. Esperado:
      *✓ 3 cartões atualizados no Anki Viewer*. O progresso fica.
    - Numa palavra sem definição, toque em **Escrever a definição**. Esperado: aparece
      *Sua definição: …* na revisão e na lista, e no cartão.
@@ -481,7 +486,7 @@ tests/run_tests.sh --previews
   dá as opções, *Apagar baralho* apaga), *Todos os baralhos (N)…* quando não cabem,
   *Importar*, *‹ Voltar* / *Fechar* na tela de estudo e as opções de estudo nas
   Configurações gravadas nas chaves do Anki Viewer.
-- Resultado atual: 278 verificações por orientação, 0 falhas. Um dos cenários reproduz o
+- Resultado atual: 280 verificações por orientação, 0 falhas. Um dos cenários reproduz o
   caso visto no aparelho: definição escrita à mão, modelo mudado, cartão antigo sem a frente
   no verso, e baralho antigo "Vocabulary Builder::Livro".
 
